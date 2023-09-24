@@ -84,7 +84,7 @@ pip install -r /path/to/requirements.txt
         - [lxml](https://lxml.de/)
     - [Requests](https://requests.readthedocs.io/en/latest/)
 
-### Manual installation with the console output (TLDR; [go further](#rights "Rights (like license)"))
+### Manual installation with the console output (TLDR; [go further](#rights-like-license "Rights (like license)"))
 
 - [Django](https://www.djangoproject.com/ "Django")
 ```
@@ -186,7 +186,7 @@ Installing collected packages: urllib3, idna, charset-normalizer, certifi, reque
 Successfully installed certifi-2023.7.22 charset-normalizer-3.2.0 idna-3.4 requests-2.31.0 urllib3-2.0.5
 ```
 
-# [](#rights)Rights (like license):
+# Rights (like license):
 
 At this time, I have not finally decided whether the project will be free for use or not.
 At the same time, I know for sure that just as I used the advice and learned the code of others, the code of this project can be useful for beginners. Thus - feel free to use it for educational purposes.
