@@ -84,7 +84,7 @@ pip install -r /path/to/requirements.txt
         - [lxml](https://lxml.de/)
     - [Requests](https://requests.readthedocs.io/en/latest/)
 
-### Manual installation with the console output (TLDR; [go further](#rights-like-license "Rights (like license)"))
+### Manual installation with the console output (TLDR; [go further](#rights-like-license))
 
 - [Django](https://www.djangoproject.com/ "Django")
 ```
