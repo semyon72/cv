@@ -22,6 +22,7 @@ from apps.cv.db_functions import (
     WorkplaceRespDatesInWorkplace, ProjectTechnologyDurationInProject, WorkplaceProjectSameUser,
     WorkplaceProjectProjectDatesInWorkplace, WorkplaceDatesGTEProject, ProjectDatesLTEWorkplace,
     WorkplaceDatesGTEWorkplaceResp, ProjectDatesGTEProjectTechnology, WorkplaceRespDatesCrossing,
+    TechnologyUniqueTogetherWithProfile,
 )
 
 
@@ -45,7 +46,12 @@ def length_range_constraint(field: Union[Field, DeferredAttribute]) -> BaseConst
         qargs.append(IsNull(F(field.attname), False))
 
     if field.max_length is not None:
-        qargs.append(Range(Length(Trim(F(field.attname))), (Value(min(1, field.max_length)), Value(field.max_length))))
+        qargs.append(
+            Range(
+                Length(Trim(F(field.attname))),
+                (Value(min(0 if field.blank else 1, field.max_length)), Value(field.max_length))
+            )
+        )
 
     if qargs:
         return CheckConstraint(
@@ -254,6 +260,21 @@ def project_dates_gte_project_technology(begin: Field, end: Field) -> BaseConstr
                 output_field=BooleanField()
             ),
         name=create_constraint_name(begin, 'end_range_gte_projtech')
+    )
+
+
+def technology_unique_together_with_profile(technology: Field) -> BaseConstraint:
+    if technology.model.__name__ != 'CVTechnologies':
+        raise ValueError('`technology` field must be field of CVTechnology model')
+
+    return CheckConstraint(
+        check=TechnologyUniqueTogetherWithProfile(
+            F(technology.model._meta.pk.attname),
+            F(technology.attname),
+            F(technology.model._meta.get_field('profile').attname),
+            output_field=BooleanField()
+        ),
+        name=create_constraint_name(technology, 'unique_together_with_profile')
     )
 
 

@@ -1,0 +1,586 @@
+{
+    "profile": {
+        "photo": "~/Profile photo/Soul-movie-soul22-fireman.png",
+        "birthday": "1972-07-24",
+        "soft_skill": "•Self-motivated;\n•Self-disciplined;\n•Result oriented;\n•Communicable;\n•I work well in a team;\n•Experienced in mentoring, helping and directing colleagues (depending on the position/on request);\n•Collaborated with other teams and individuals to identify, resolve, and prevent future issues.",
+        "summary_qualification": "Good knowledge of Python (self-taught, like most of my knowledge). I have skills in networking, multi-threading, multiprocessing, asynchronous I/O, web and desktop application development (desktop application development in the past), as well as working both in a team and individually. Familiar with all aspects of the development cycle and really passionate about programming and spend a lot of free time improving my skills (also English). I like to learn new technologies, gain knowledge and improve my technical skills.",
+        "position": "Python Developer/Engineer",
+        "cover_letter": "For a briefly review, I have summarized some of the information from my comprehensive resume about the skills (and duration) that usually specified as the requirements for a RESTful API developer:\n\n— I switched to Python in Feb. 2020 (including continuous learning). Thus — 3.5 years (approx)\n— I started using Django about half a year after — Sep. 2020 (including continuous learning). All my projects are based on Django. Approximately — 3 years.\n— First experience of using the Django REST Framework was in Sept. 2022. Approximately — 1 year.\n— I am using SQL beginning from 1995 (roughly). Lately, due to the presence of ORM, I mostly do not use the clear SQL. Although, a pure SQL is easier to write, I try to play by the rules of Django, and where possible I implement an equivalent of SQL with the help of ORM capabilities. So, from the beginning, I write the necessary SELECT and then implement it in an ORM to be compatible with supported databases. Thus: SQL — many years; Complex SQL through ORM, roughly — 2 years.\n— Knowledge of HTTP protocol and RESTful API. I’m convinced that my latest project (github.com/semyon72/cv) demonstrates it (at least a RESTful API). How HTTP works I know too.\n— Around Oct. 2020, I finally switched to Debian + KDE.\n— To be a confident in the unit testing most of the code in the last project was covered by unit tests.\n— For some time (approx. 1 year) I have had experience and have used Ajax requests via jQuery. About the knowledge of HTML/CSS — semyon72.com (my CMS/blog, written in Django).\n— English — Intermediate. I am sure that constant practice of real speaking will give confidence and raise the level."
+    },
+    "education": [
+        {
+            "begin": "2008-01-01",
+            "end": "2011-01-01",
+            "degree": "Specialist",
+            "speciality": "Banking business",
+            "institution": "V. N. Karazin Kharkiv National University",
+            "complete": true
+        },
+        {
+            "begin": "1990-01-01",
+            "end": "1996-01-01",
+            "degree": "Engineer",
+            "speciality": "Multi-channel (radio, mobile, cellular, wired, satellite and television) communications",
+            "institution": "Ukraine, Kharkiv, National University of Radio Electronics",
+            "complete": true
+        },
+        {
+            "begin": "1996-01-02",
+            "end": "2007-12-31",
+            "degree": "student",
+            "speciality": "Courses with CISCO. Professional training seminars (for IT)",
+            "institution": "Various institutions",
+            "complete": true
+        },
+        {
+            "begin": "2011-01-01",
+            "end": null,
+            "degree": "self-taught",
+            "speciality": "Continuous self-education",
+            "institution": "Various sources: articles, manuals etc",
+            "complete": false
+        }
+    ],
+    "hobby": [
+        {
+            "description": "Fishing"
+        },
+        {
+            "description": "Mountain skiing (also on regular ones, but to a lesser extent)"
+        },
+        {
+            "description": "Tourism"
+        },
+        {
+            "description": "IoT (did it together with my son)"
+        }
+    ],
+    "language": [
+        {
+            "lang": "English",
+            "level": "Intermediate",
+            "notes": "Free reading and writing but conversation need to get more confidence"
+        },
+        {
+            "lang": "Ukrainian",
+            "level": "native",
+            "notes": "Free texting and speaking"
+        },
+        {
+            "lang": "rusian",
+            "level": "native",
+            "notes": "Free texting and speaking"
+        }
+    ],
+    "workplace": [
+        {
+            "begin": "2020-02-01",
+            "end": null,
+            "workplace": "Self-education.\nLearning:\n- Python, libraries, infrastructure and technologies.\n- Debian and related technologies to deploy the own public website.\n- Writing articles on some learned fields.\n"
+        },
+        {
+            "begin": "2014-04-01",
+            "end": "2020-01-31",
+            "workplace": "Self-employed. Freelance, own projects (PHP), support of the household, family circumstances, health issues etc."
+        },
+        {
+            "begin": "2012-10-01",
+            "end": "2014-01-31",
+            "workplace": "PHP developer (LAMP full stack) at Projestic."
+        },
+        {
+            "begin": "1999-11-01",
+            "end": "2012-01-31",
+            "workplace": "Deputy head of the Information Technology and Customs Statistics Department of Kharkiv Customs. (the department was renamed and had the following name - Information and Analytical Work and Customs Statistics)"
+        },
+        {
+            "begin": "1995-12-01",
+            "end": "1999-10-31",
+            "workplace": "Specialist, later administrator of DBMS/RDBMS (Dbase, Oracle.) of the Department of Information and Analytical Work and Customs Statistics of Kharkiv Customs. (the department was renamed from - Statistics and Analysis Information Service)"
+        },
+        {
+            "begin": "1990-09-01",
+            "end": "1995-11-30",
+            "workplace": "Service specialist/engineer of data preparation equipment for ES EVM 1045 like System/370 of the department of automation of production control systems (computer center) of the Elektrovazhmash plant"
+        }
+    ],
+    "project": [
+        {
+            "begin": "2023-05-01",
+            "end": null,
+            "title": "Own project CV creation system",
+            "prerequisite": "Desire to make a CV creation system",
+            "description": "This project is my vision of how curriculum vitae (CV or Resume) should look to help the organizations and those who are looking for a job to find each other.\nThis vision is the thoughts of developer/engineer how it can be implemented to be maximum helpful for consumer to automate matching, minimize CV capacity and maximize the number of representations of the final view.\nAll code based on next two main frameworks - Django and Django REST framework\nProject embraces all the main aspects of software development for REST API:\n\t• Database (planning, normalization ...)\n\t• Database constraints/logical integrity (to check the date ranges crossing,for example)\n\t• Creating the serializators with control over both some restrictions and integrity checking at this level.\n\t• Creating the views (it does not embrace ViewSet-s) that behave like a ViewSet with some additional checks at this level.\n\t• Testing all parts of described above. Both simple tests like \"what I think is what I write\" and tests that follow the DRY methodology and should probably be tested as well :)\nMore details in the project description on GitHub.",
+            "result": "https://github.com/semyon72/cv"
+        },
+        {
+            "begin": "2023-04-28",
+            "end": "2023-04-30",
+            "title": "Python developer internship test task",
+            "prerequisite": "Desire to get first job as a Python developer",
+            "description": "The test task involved using the Django REST Framework and NLTK. The main goal was to paraphrase the sentence in the maximum number of cases by moving the NP without changing the main meaning of the original sentence.",
+            "result": "https://github.com/semyon72/maklai-internship"
+        },
+        {
+            "begin": "2023-02-25",
+            "end": "2023-04-27",
+            "title": "Deepening knowledge of the frontend for site refactoring",
+            "prerequisite": "Labor market requirements, demand for Full Stack developers",
+            "description": "- Learning VSCode for front-end development;\n- Updating and deepening knowledge about HTML, CSS, JavaScript (books, MDN .... ) with practice in VSCode;",
+            "result": ""
+        },
+        {
+            "begin": "2023-01-14",
+            "end": "2023-02-24",
+            "title": "Returning the site online",
+            "prerequisite": "Self-promotion",
+            "description": "Due to periodic unexpected disconnection of the power supply (without UPS), the Raspberry Pi4B server became faulty. Recovered the data on the micro-SD card and completely reinstalled the server. Thanks to these challenges, I deepened my knowledge about bonding, wpa_supplicant, ifupdown and Linux in general",
+            "result": ""
+        },
+        {
+            "begin": "2022-11-01",
+            "end": "2023-01-13",
+            "title": "Studying SQLite FTS5, and implementing FTS for the site",
+            "prerequisite": "The need to implement FTS (quick search) for the Ukrainian language on the website",
+            "description": "After figuring out how to add support for FTS Ukrainian to PostgreSQL through Dictionary — Ispell stemmer (dictionary template), using dictionaries from the hunspell-uk package of Debian or LibreOffice, I decided to add FTS for the site (SQLite FTS5 contentless index + Django). Completed but not integrated",
+            "result": "https://github.com/semyon72/fts_ua"
+        },
+        {
+            "begin": "2022-10-16",
+            "end": "2022-10-31",
+            "title": "Study (basic principles, ideas, terminology, etc.) of Elasticsearch, PostgreSQL, SQLite FTS5 and libraries related to FulTextSearch",
+            "prerequisite": "Labor market needs for specialists with knowledge of Elasticsearch and the need to implement FTS (quick search) for the Ukrainian language on your website",
+            "description": "After \"playing around\" with locally installed Elasticsearch and Kibana and figuring out, mainly with FTS and basic concepts, I switched to PostgreSQL. PostgreSQL was also interesting for three reasons - FTS, GIS and Python support (GIS is also supported by Elasticsearch). SQLite has been fine up until this point (also has FTS support out of the box and GIS extension). Because it has better support than MySQL and it is easier to synchronize between production, staging and development servers (instances) of my site\n\nNote: I have not used PostgreSQL yet due to the lack of urgent need and the fact that I have been working with Oracle for a long time but without FTS (I think that I am sufficiently familiar with the capabilities of RDBMS, both for the developer and the DBA part). By the way, it is very sad that there is still no stemmer for the Ukrainian language. Only a few amateur implementations (although there is one with a \"scientific approach\" but there are doubts about the quality), if do not take into account the use of hunspell + the LibreOffice dictionary",
+            "result": "Articles on the site"
+        },
+        {
+            "begin": "2022-10-01",
+            "end": "2022-10-15",
+            "title": "Familiarization (basic principles, ideas, terminology, etc.) with Elasticsearch, Databricks, Solr",
+            "prerequisite": "The labor market needs specialists with knowledge of systems similar to Elasticsearch and the need to implement FTS (quick search) for the Ukrainian language on your website",
+            "description": "After the first delving into Elasticsearch, Databricks, Solr (basic ideas and purpose), I realized that the interesting thing is that there is a “powerful” REST API out of the box, and also, each of them provides powerful tools for data collection, data analysis, automation (scheduling) processes and even AI and ML tools (in paid versions) and even out of the box data visualization system Kibana (in the case of Elasticsearch). It also supports native SQL languages similar to the SQL-92 standard (with modifications).\n\nFrom a Python developer's point of view, there is practically no difference (there certainly is) because libraries (clients) for interacting with their REST APIs are available for each of them. The difference is only in the interfaces of these libraries and terminology. Given the large (number of vacancies) need on the labor market, Elasticsearch was chosen. At the same time, the urgent need was to solve the issue of Full Text Search for the Ukrainian language.",
+            "result": ""
+        },
+        {
+            "begin": "2022-09-01",
+            "end": "2022-09-30",
+            "title": "Learning the Django REST Framework",
+            "prerequisite": "Negative experience of sending resumes to several vacancies (no reaction from employers, no answers) and analysis of labor market needs",
+            "description": "Between the most spread the 2 frameworks that were distributed at that time, Django or Flask, Django was chosen due to the fact that everything is in the box and the labor market (vacancies) showed an advantage in the needs of Django specialists over Flask or FastAPI.",
+            "result": "https://github.com/semyon72/drf. In addition, deepened the knowledge and practical skills (experience) of code testing and REST API endpoints"
+        },
+        {
+            "begin": "2022-07-16",
+            "end": "2022-08-31",
+            "title": "Studying asyncio and writing articles",
+            "prerequisite": "Market needs",
+            "description": "Learning asynchronous system (asyncio). During his studies, I wrote 5 articles and published them on the website. To consolidate the practice of using asyncio, I made an asynchronous version of the office_tools.py (see below) program (the psutils and unoserver modules are used). According to the results of comparing the running time of the asynchronous version with the \"serial\" version (under some conditions), the \"serial\" version works faster. But, due to the fact that the asynchronous version involves additional components and different ways of using soffice, these applications are incomparable",
+            "result": "https://github.com/semyon72/aio_file_converter"
+        },
+        {
+            "begin": "2022-05-01",
+            "end": "2022-07-15",
+            "title": "Tic-Tac-Toe",
+            "prerequisite": "None. Just as a competition with the son",
+            "description": "Around the end of May, I decided to write a game - tic-tac-toe.",
+            "result": "Console and web versions.\nhttps://github.com/semyon72/games.\nWeb - http://games.semyon72.com/ clean HTML and backend.\n\nMost modules are covered by unit or doc tests. Over time, I practically refused from doc tests."
+        },
+        {
+            "begin": "2022-01-01",
+            "end": "2022-02-22",
+            "title": "Deployment of production site",
+            "prerequisite": "Self-promotion",
+            "description": "Deploying the system on a Raspberry P4B mini-server required the installation of the Debian Vanilla + LXDE + Apache + Python 3.9 distribution ... the purchase of a domain name (semyon72.com at that time thesemam.com), setting the ASUS router on OpenWrt, and more.\n\nThe works were completed on February 22, 2022. The site http://semyon72.com (thesemam.com) with 30+ articles was launched. Sometime since February 27, the site has been disabled.",
+            "result": "http://semyon72.com"
+        },
+        {
+            "begin": "2020-02-01",
+            "end": "2020-08-31",
+            "title": "Learning Python with standard libraries",
+            "prerequisite": "PHP is not enough",
+            "description": "Self-education - \"Programming in Python 3 2nd Edition\", \"Python In Practice\" by Mark Summerfield, official Python documentation and so on.",
+            "result": "https://github.com/semyon72"
+        },
+        {
+            "begin": "2020-09-01",
+            "end": "2021-03-31",
+            "title": "Learning the Django Web Framework",
+            "prerequisite": "Learning and promotion purposes",
+            "description": "Self-education - official documentation, analysis of Django source code, and so on. Practice - writing own blogging system (CMS).\n\nhttps://github.com/semyon72/pylog.7myon.com - one of the first fully functional working versions. It consists of an admin part with article management and public viewing, search, etc.\nhttps://github.com/semyon72/thesemam.com (almost latest version)\nhttps://github.com/semyon72/blog-project-site (version for production without admin part)",
+            "result": "Specified in the description"
+        },
+        {
+            "begin": "2021-04-01",
+            "end": "2021-05-31",
+            "title": "Final switch to Debian",
+            "prerequisite": "Cross-platform was not 100%. Debian is better for Python than Windows",
+            "description": "During my first attempt at deploying using Apache, I had to permanently switch from Windows to Linux. It took some time to renew practical skills with Debian + KDE and learn the other necessary parts for deploying WSGI applications. As a result, I renewed my knowledge and gained additional knowledge and skills in WSGI, Debian, Apache, OpenSSL ....",
+            "result": ""
+        },
+        {
+            "begin": "2021-06-01",
+            "end": "2021-07-31",
+            "title": "Adding the own articles to CMS",
+            "prerequisite": "Filling the site for self-promotion, speeding up the solution of issues that have already been worked out (as a guide) and as a possible help to anyone who needs it",
+            "description": "After deploying my CMS on Debian, there was enough stuff in the form of files (LibreOffice/OpenOffice) that was added to the CMS. The next stage was deployment on the Internet. I used to have hosting (see below) that supported Python applications, but practice and experimentation revealed some flaws. Based on past experience, I decided to implement the project Raspberry P4B + Debian (vanilla installation) + DDNS + flashed ASUS router on OpenWrt. This took some time, during which I wrote several additional articles and transferred them all (*.odt) to the CMS",
+            "result": "http://semyon72.com"
+        },
+        {
+            "begin": "2021-08-01",
+            "end": "2021-12-31",
+            "title": "Solving the issue of desynchronization of primary data and content of own CMS",
+            "prerequisite": "In the process of use, flaws (errors) were found both in the articles and in the code. As a result, desynchronization of primary sources (*.odt files) and CMS content",
+            "description": "So, I proceeded to create the following 3 utilities:\n\n1. office_tools.py — conversion of *.odt and other files understood by soffice to HTML in batch mode with preserving the file structure of the source.\n\n2. site_text_compare.py — compares HTML files with existing content in the CMS via HTTP/HTTPS requests (with a self-signed certificate). A full scan of all texts available through the web interface is performed (recursively). Also, the difference in the data and the presence of the HTML of the original is calculated. The same on the other side. Also, this utility allows you to check the integrity of links to external resources (images and links to third-party documentation)\n\n3. site_text_reduce.py — This program was intended to remove (clean up) redundant nested HTML tags and attributes generated during the conversion. But the practice of use has shown that in about 5 percent of cases after such \"cleaning\" the comparison program does not give the desired result. Thus, with the help of the office_tools.py and site_text_compare.py applications, the issue of automation and reducing the time to search for where and what has changed was solved",
+            "result": "https://github.com/semyon72/py-post-parser"
+        },
+        {
+            "begin": "2014-05-01",
+            "end": "2020-01-31",
+            "title": "Freelance. Own PHP projects in free time",
+            "prerequisite": "The need for own website",
+            "description": "When deciding whether to choose Linux hosting (Web hosting) with CPanel for administration or an AWS analogue, the choice fell on Linux hosting with CPanel due to the fact that by this time I already had experience working with Linux/Unix and CPanel (and it seems that AWS was slightly more expensive). VPS and dedicated servers were not considered due to price. Had hosting on GreenGeeks and Namecheap for a long time. Currently, Namecheap only has DDNS hosting left.\n\nLearning PHP Symfony framework.\n\nhttps://github.com/semyon72/phpIoT - classes, mainly for inputting data using the ThingsBoard API to ThingsBoard itself.\n\nhttps://github.com/semyon72/MyBundles - Bundles for getting/adding data from/to the ThingsBoard database (PostgreSQL)\n\nhttps://github.com/semyon72/housekeeper - Symfony project that allows you to keep data on the consumption of electricity, water, etc. at several locations, with the creation of invoices (receipts for payment) in pdf. Also, worked on IoT with my son.",
+            "result": "Specified in description"
+        },
+        {
+            "begin": "2012-10-01",
+            "end": "2014-01-31",
+            "title": "PHP developer (LAMP full stack) at Projestic",
+            "prerequisite": "Earn money",
+            "description": "PHP developer (LAMP full stack) - outsourcing for Granite Web Design (United States).\n\nThe main job is to support the websites of several regular clients. The frameworks used were Yii, Zend Framework 1, a mix of WordPress and regular PHP. Support, mainly consisted of adding additional functionality and pages, bugfixing or changing existing ones. Almost all sites had the option to pay by card using the bank acquirer — authorize.net. For new functions, both independently and together with colleagues, I was providing the design of both database structures and data designs for end users. Also, sometimes in \"hot debates\" issues were resolved regarding the use of this or that library, the approach to meeting the client's needs both in terms of quality and time. I believe that \"brain storm\" is quite an effective thing. Support was also related to CSCart, but to a lesser extent - foremost - optimization of SQL queries and addition of small, something like widgets, information blocks (mainly at a time when the main specialist of CSCart, who was a much better frontend than me, was busy with urgent tasks). The same applied to sites based on WordPress. During optimization, I often switched the database log to debug mode for logging long-running queries. One-time works (possibly for other clients):\n• Integration into the administrative part of WordPress additional pages for example checking on the TeamCity site for a new installation, receiving and publishing files for direct download.\n• Writing clients to work with FedEx and UPS postal services API to determine post offices near the specified address (for the USA) with writing a simple page (quick search) that shows functionality.\n• Writing to the client to the Zabbix API, regarding the used network traffic, for generating reports both in the form of xls and pdf files and for generating graphs using Google Charts.\n• Parsing csv, tsv, xls files and so on.\n\nThe main tools that used PHP, PHP cURL, Other PHP libraries, HTML, CSS, JavaScript, jQuery, jQueryUI, jQuery free components, Ajax requests",
+            "result": ""
+        },
+        {
+            "begin": "1999-11-01",
+            "end": "2012-01-31",
+            "title": "Deputy head of the Information Technology and Customs Statistics Department of Kharkiv Customs. (the department was renamed from - Information and Analytical Work and Customs Statistics)",
+            "prerequisite": "",
+            "description": "In general, the scope of responsibility of the position included everything related to information technologies.\n\nNamely:\n\t• Development of systems for accumulating information for the needs of customs (including general statistics). But the main array of data was cargo customs declarations. Therefore, the development, deployment and support of systems for collecting information on customs declarations was a priority.\n\t• Maintenance of hardware in proper working state.\n\t• Development, design and deployment of an extensive communication network (Intranet) to collect information between approximately 7 major branch locations physically located on the border (approximately 350 kilometers along the border line) and 10 smaller locations located 5-40 km from the main office.\n\nDirectly participated in the development and formation of all stages of transmission, processing, accumulation, analysis of data, generation of reports (analytical reports), programming and automation of processes.\nProgramming languages - Delphi, Perl, PHP, SQL (Oracle 9+, MSSQL Server, MySQL) to create data generation applications for statistical, analytical reports, as well as forecasting, creating software tools for data migration, generating and passing tests for professional education and other utilities.\n\nIn order to understand the volume of data, the variety of technologies used, the necessity of close interaction with each other and with anyone, the formation of reports on demand with data online - it was necessary to automate the processes starting from the place at the border where the cargo customs declaration (CCD) is accepted in electronic form directly to the unit to which he was directly subordinated. Then to customs, after which to the central database in Kyiv. There were also such CCD on which the information in the reverse direction had to be returned to the final unit as soon as possible to minimize the delay time of the goods at the border.\n\nTherefore, it was necessary to support:\n\t• AIX and Windows — DB servers;\n\t• Cisco..., Windows, FreeBSD — network and last-mile issues;\n\t• Oracle and MSSQL Server;\n\t• Monitor the passage of CCD, if necessary - send it further;\n\t• Scheduled data backups;\n\t• Provision of information and reports to the management upon request (including whether the CCD took place in a certain direction and at what time and what it contained)\n\t• and so on.\n\n*The size of the database files in just one year was more than 2 GB - optimization of requests, removing \"loose\" indexes and creating new ones, and other things related to the DBA sphere.\n\nTherefore, there was no ready-made solution for the formation of a monolithic system, and therefore both third-party software products and software products developed both at the centralized level and at the customs level were used. Of course, everything related to one's own needs was designed and developed by one's own efforts. Especially many and various things had to be formed at the beginning (1995...). And in order to improve cooperation between units and delimitation of responsibility, the customs office had an order regarding the procedure for the creation of software tools, experimental operation, making changes and permanent operation both in a separate unit and in the customs office as a whole. With the writing of instructions, the description of database structures, everything necessary for use and further support.",
+            "result": ""
+        },
+        {
+            "begin": "1995-12-01",
+            "end": "1999-10-31",
+            "title": "Specialist, later administrator of DBMS/RDBMS (Dbase, Oracle.) of the Department of Information and Analytical Work and Customs Statistics of Kharkiv Customs. (the department was renamed from - Statistics and Analysis Information Service)",
+            "prerequisite": "",
+            "description": "Development, implementation and support of systems for collecting information on cargo customs declarations of Kharkiv Customs and regional customs. Administration of DBase and Oracle 8 databases. Creation of applications for generating analytical reports. Programming languages — FoxPro, Delphi. (details is mentioned in the next position)",
+            "result": ""
+        },
+        {
+            "begin": "1990-09-01",
+            "end": "1995-11-30",
+            "title": "Service specialist/engineer of data preparation equipment for ES EVM 1045 like System/370 of the department of automation of production control systems (computer center) of the Elektrovazhmash plant",
+            "prerequisite": "",
+            "description": "Repair and maintenance of data preparation devices/storage devices on magnetic tapes (with elements of programming on Assembler and Pascal on IBM PC)",
+            "result": ""
+        }
+    ],
+    "workplace_responsibility": [
+        {
+            "begin": "1995-12-01",
+            "end":  "1996-11-30",
+            "responsibility": "Database support in an up-to-date state (Dbase). Coordination with the developers of changes to the software of database support. Participation in the creation of distributed system for data gathering. Control of the timeliness of receiving data from third-party resources. Writing IID requests, generating reports and analytical materials. Backups. etc",
+            "role": "Database support specialist (Dbase)"
+        },
+        {
+            "begin": "1996-12-01",
+            "end":  "1999-10-31",
+            "responsibility": "Same as previous role plus Oracle. Data migration from DBase to Oracle. Keeping them in an up-to-date state",
+            "role": "Database administrator (Dbase, Oracle)"
+        }
+    ],
+    "resource": [
+        {
+            "resource": "tel",
+            "link": "+38-067-243-53-60"
+        },
+        {
+            "resource": "email",
+            "link": "semyon.mamonov@gmail.com"
+        },
+        {
+            "resource": "skype",
+            "link": "live:.cid.f3a7ad7d8e959c3d"
+        },
+        {
+            "resource": "git",
+            "link": "https://github.com/semyon72"
+        },
+        {
+            "resource": "site",
+            "link": "http://semyon72.com"
+        }
+    ],
+    "technology": [
+        {
+            "technology_type": "PROG_LANG",
+            "technology": ["Python 3.9+", "SQL", "JavaScript", "PHP", "Perl", "Delphi", "FoxPro"]
+        },
+        {
+            "technology_type": "FWRK_LIB",
+            "technology": [
+                "Python Standard Library", "Django", "Django REST Framework", "Requests", "Lxml", "BeautifulSoup4",
+                "Faker", "PSUtil", "hunspell", "gettext", "Bootstrap", "PHP Symfony", "PHP Zendframework",
+                "PHP Yii", "JQuery", "JQueryUI", "jQuery free components", "urllib", "cssselect", "html.parser",
+                "difflib", "unittest", "asyncio", "argparse", "unoserver", "NLTK"
+            ]
+        },
+        {
+            "technology_type": "FORMAT",
+            "technology": ["XML", "HTML", "CSS", "JSON", "Yaml", "CSV"]
+        },
+        {
+            "technology_type": "DB",
+            "technology": [
+                "Oracle 9+", "MSSQL Server", "MySQL (myisam, innodb)", "MariaDB (innodb)",
+                "SQLite", "PostgreSQL", "DBase"
+            ]
+        },
+        {
+            "technology_type": "OS",
+            "technology": [
+                "Debian bullseye(+KDE/LXDE)", "Windows XX (include server edition)", "Linux hosting (CPanel)",
+                "OpenWrt"
+            ]
+        },
+        {
+            "technology_type": "DEV_TOOL",
+            "technology": [
+                "PyCharm Pro", "VSCode", "Git", "GitHub", "NetBeans"
+            ]
+        },
+        {
+            "technology_type": "PROTOCOL",
+            "technology": [
+                "Network protocols and infrastructure", "OSI model", "HTTP", "SMTP"
+            ]
+        },
+        {
+            "technology_type": "OTHER",
+            "technology": [
+                "Apache2", "Cryptography (OpenSSL)", "Full Text Search", "Integration test",
+                "Raspberry Pi4B (Debian+LXDE)", "ifupdown", "LAMP stack", "Server installation",
+                "Server configuration", "System troubleshooting", "Network configuration",
+                "Network monitoring", "Network troubleshooting", "Router configuration", "Bonding",
+                "Data recovery", "loop device", "wpa_supplicant", "SQLite FTS5", "Stemming",
+                "Elasticsearch", "Kibana", "Web scrapping", "soffice", "Ajax requests", "Article writing"
+            ]
+        }
+    ],
+    "project-technology": [
+        {
+            "project":  "2023-05-01",
+            "technology": [
+                "Debian bullseye(+KDE/LXDE)",
+                "PyCharm Pro", "Python 3.9+", "Python Standard Library", "Django", "SQL", "SQLite", "unittest",
+                "Git", "GitHub", "Django REST framework", "Integration test", "requests", "BeautifulSoup4",
+                "JSON", "difflib", "argparse"
+            ],
+            "duration": null,
+            "notes": null
+        },
+        {
+            "project": "2023-04-28",
+            "technology": [
+                "Debian bullseye(+KDE/LXDE)",
+                "PyCharm Pro", "Python 3.9+", "Python Standard Library", "Django", "unittest", "Git", "GitHub",
+                "Django REST framework", "Integration test", "NLTK"
+            ],
+            "duration": null,
+            "notes": null
+        },
+        {
+            "project": "2023-02-25",
+            "technology": ["Debian bullseye(+KDE/LXDE)", "HTML", "CSS", "JavaScript", "VSCode"],
+            "duration": null,
+            "notes": null
+        },
+        {
+            "project": "2023-01-14",
+            "technology": [
+                "Debian bullseye(+KDE/LXDE)", "Raspberry Pi4B (Debian+LXDE)", "OpenWrt",
+                "Network protocols and infrastructure", "OSI model", "HTTP",
+                "Server configuration", "System troubleshooting", "Router configuration",
+                "Data recovery", "loop device", "ifupdown", "Bonding", "wpa_supplicant",
+                "Article writing",
+                ["Apache2", "+mod_wsgi"],
+                ["Server installation", "Other tools/technologies were also used during server recovery/deployment back to online"]
+            ],
+            "duration": null,
+            "notes": null
+        },
+        {
+            "project": "2022-11-01",
+            "technology": [ "Debian bullseye(+KDE/LXDE)",
+                "PyCharm Pro", "Python 3.9+", "Python Standard Library", "Django", "SQL", "SQLite", "unittest",
+                "Git", "GitHub", ["hunspell", "UA stemming"], "SQLite FTS5", "Stemming",
+                "Article writing"
+            ],
+            "duration": null,
+            "notes": null
+        },
+        {
+            "project": "2022-10-16",
+            "technology": [ "Debian bullseye(+KDE/LXDE)",
+                "Elasticsearch", "Kibana", "PostgreSQL", "SQLite", "SQLite FTS5",
+                "Full Text Search", "Stemming", ["hunspell","UA stemming"],
+                "Article writing"
+            ],
+            "duration": null,
+            "notes": null
+        },
+        {
+            "project": "2022-10-01",
+            "technology": [
+                "Elasticsearch", "Kibana", "PostgreSQL", "SQLite", "SQLite FTS5",
+                "Full Text Search", "Stemming",
+                ["hunspell", "diving into the roots of technology, especially for UA stemming"],
+                ["Article writing", null]
+            ],
+            "duration": null,
+            "notes": "diving into the roots of technology"
+        },
+        {
+            "project": "2022-09-01",
+            "technology": [
+                "Debian bullseye(+KDE/LXDE)",
+                "PyCharm Pro", "Python 3.9+", "Python Standard Library", "Django", "Django REST Framework",
+                "SQL", "SQLite", "unittest", "Git", "GitHub"
+            ],
+            "duration": null,
+            "notes": null
+        },
+        {
+            "project": "2022-07-16",
+            "technology": [
+                "Debian bullseye(+KDE/LXDE)",
+                "PyCharm Pro", "Python 3.9+", "Python Standard Library",
+                "SQL", "SQLite", "unittest", "Git", "GitHub",
+                "asyncio", "psutil", "unoserver", "soffice",
+                "Article writing"
+            ],
+            "duration": null,
+            "notes": null
+        },
+        {
+            "project": "2022-05-01",
+            "technology": [
+                "Debian bullseye(+KDE/LXDE)",
+                "PyCharm Pro", "Python 3.9+", "Python Standard Library", "Django",
+                "SQL", "SQLite", "unittest", "Git", "GitHub", "HTML"
+            ],
+            "duration": null,
+            "notes": null
+        },
+        {
+            "project": "2022-01-01",
+            "technology": [
+                "Debian bullseye(+KDE/LXDE)", "Raspberry Pi4B (Debian+LXDE)", "OpenWrt",
+                "Network protocols and infrastructure", "OSI model", "HTTP",
+                "Server configuration", "System troubleshooting", "Router configuration",
+                ["Apache2", "+mod_wsgi"], "ifupdown", "Bonding", "wpa_supplicant", "Cryptography (OpenSSL)",
+                "Article writing"
+            ],
+            "duration": null,
+            "notes": null
+        },
+        {
+            "project": "2021-08-01",
+            "technology": [
+                "Debian bullseye(+KDE/LXDE)",
+                "PyCharm Pro", "Python 3.9+", "Python Standard Library",
+                "Git", "GitHub", "argparse", "soffice", "Web scrapping", "urllib", "lxml", "cssselect", "difflib",
+                "html.parser", "Cryptography (OpenSSL)", "HTTP", "HTML", "CSS", "JSON",
+                "Article writing"
+            ],
+            "duration": null,
+            "notes": null
+        },
+        {
+            "project": "2021-06-01",
+            "technology": [
+                "Debian bullseye(+KDE/LXDE)", "Raspberry Pi4B (Debian+LXDE)", "OpenWrt",
+                "Network protocols and infrastructure", "Server configuration", "System troubleshooting", "Router configuration",
+                ["Apache2", "+mod_wsgi"], "ifupdown", "Bonding", "wpa_supplicant", "Cryptography (OpenSSL)", "soffice",
+                "Article writing"
+            ],
+            "duration": null,
+            "notes": null
+        },
+        {
+            "project": "2021-04-01",
+            "technology": [
+                "Debian bullseye(+KDE/LXDE)",
+                "Network protocols and infrastructure", "Server configuration", "System troubleshooting",
+                "Cryptography (OpenSSL)", ["Apache2", "+mod_wsgi"],
+                "Article writing"
+            ],
+            "duration": null,
+            "notes": null
+        },
+        {
+            "project": "2020-09-01",
+            "technology": [
+                "Windows XX (include server edition)",
+                "PyCharm Pro", "Python 3.9+", "Python Standard Library",
+                "Git", "GitHub", "SQL", "SQLite",
+                "Django", "html.parser", "argparse", "HTML", "CSS", "JavaScript", "gettext", "Faker",
+                "Article writing"
+            ],
+            "duration": null,
+            "notes": null
+        },
+        {
+            "project": "2020-02-01",
+            "technology": [
+                "Windows XX (include server edition)",
+                "PyCharm Pro", "Python 3.9+", "Python Standard Library"
+            ],
+            "duration": null,
+            "notes": null
+        },
+        {
+            "project": "2014-05-01",
+            "technology": [
+                "Windows XX (include server edition)", "Linux hosting (CPanel)", "PHP", "PHP Symfony",
+                "NetBeans", "SQL", "MySQL (myisam, innodb)", "PostgreSQL",
+                "YAML", "HTML", "CSS", "JavaScript", "JQuery", "Bootstrap", "LAMP stack"
+            ],
+            "duration": null,
+            "notes": null
+        },
+        {
+            "project": "2012-10-01",
+            "technology": [
+                "Windows XX (include server edition)", "PHP", "NetBeans", "SQL", "MySQL (myisam, innodb)",
+                "XML", "HTML", "CSS", "CSV", "JavaScript", "JQuery", "Bootstrap", "LAMP stack", "HTTP", "SMTP", "Web scrapping",
+                "jQueryUI", "jQuery free components", "Ajax requests", "Apache2",
+                "PHP Zendframework", "PHP Yii"
+            ],
+            "duration": null,
+            "notes": null
+        },
+        {
+            "project": "1999-11-01",
+            "technology": [
+                "Windows XX (include server edition)", "Network protocols and infrastructure", "Server configuration",
+                "System troubleshooting",
+                "Network configuration", "Network monitoring", "Network troubleshooting",
+                "Cryptography (OpenSSL)",
+                "SQL", "MySQL (myisam, innodb)", "Oracle 9+", "MSSQL Server", "DBase",
+                "Perl", "Delphi", "PHP",
+                "CSV", "XML", "HTML", "CSS", "JavaScript", "JQuery", "HTTP", "SMTP",
+                "Apache2"
+            ],
+            "duration": null,
+            "notes": null
+        },
+        {
+            "project": "1995-12-01",
+            "technology": [
+                "Windows XX (include server edition)", "SQL", "DBase", "Oracle 9+", "Delphi", "FoxPro"
+            ],
+            "duration": null,
+            "notes": null
+        }
+    ]
+}

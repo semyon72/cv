@@ -469,6 +469,54 @@ class ProjectDatesGTEProjectTechnologyPatch(SQLitePatchMixin, db_patch.BasePatch
         )
 
 
+class TechnologyUniqueTogetherWithProfilePatch(SQLitePatchMixin, db_patch.BasePatch):
+    """
+        Because the value `null` will be recognized as different in the `unique` constraint then
+        we will have the duplication for
+        `INSERT INTO cv_cvtechnologies (technology, profile_id) VALUES('3333333333333333', null)`
+        if we run this twice
+
+        We need to implement a function that takes `technology` and `profile_id` as parameters
+        and executes the SQL that is similar to
+        SELECT COUNT(*)
+        FROM cv_cvtechnologies
+        WHERE CASE WHEN profile_id is null THEN profile_id is 9 ELSE profile_id == 9 END
+        and technology='3333333333333333'
+    """
+
+    name = 'technology_unique_together_with_profile'
+
+    @functools.cached_property
+    def patch_func_model(self):
+        from .models import CVTechnologies
+        return CVTechnologies
+
+    def _patch_sqlite_func(self, technology_id, technology: str, profile_id: Optional[int]) -> bool:
+        """
+            We suppose that this function will called in check constraint.
+            Therefore, `technology` and `profile_id` will contain the corresponding data (values) that
+            modify or create a new CVTechnologies
+
+            technology_id - is CVTechnologies.id. This value will be used to exclude itself on `update` action
+            technology - is CVTechnologies.technology
+            profile_id - is CVTechnologies.profile_id
+
+            It returns True if CVTechnologies has no duplicates
+        """
+        if_null_case = Case(
+            When(
+                profile__isnull=True,
+                then=Case(
+                    When(IsNull(Value(profile_id), True), then=Value(True)),
+                    default=Value(False)
+                )
+            ),
+            default=Exact(F('profile'), profile_id)
+        )
+        qs = self.patch_func_model.objects.filter(if_null_case, ~Q(pk=technology_id), technology=technology)
+        return qs.count() == 0
+
+
 class CVPatcher(db_patch.Patcher):
 
     patches = [
@@ -485,6 +533,7 @@ class CVPatcher(db_patch.Patcher):
         ProjectDatesLTEWorkplacePatch,
         WorkplaceDatesGTEWorkplaceRespPatch,
         ProjectDatesGTEProjectTechnologyPatch,
+        TechnologyUniqueTogetherWithProfilePatch,
     ]
 
 

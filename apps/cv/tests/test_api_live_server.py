@@ -88,7 +88,11 @@ class TestLoginViaRequests(APILiveServerTestCase):
                 # 'url': 'http://localhost:52769/cv/api/user/'
             },
             'birthday': '2001-10-11',
-            'photo': None
+            'photo': None,
+            'cover_letter': None,
+            'position': None,
+            'soft_skill': None,
+            'summary_qualification': None
         }
 
         # exclude 'date_joined'. test_resp_data is fixed, but User.date_joined is auto generated data.

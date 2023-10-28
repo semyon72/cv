@@ -11,6 +11,7 @@ from .patches import (
     WorkplaceRespDatesInWorkplacePatch, ProjectTechnologyDurationInProjectPatch, WorkplaceProjectSameUserPatch,
     WorkplaceProjectProjectDatesInWorkplacePatch, WorkplaceDatesGTEProjectPatch, ProjectDatesLTEWorkplacePatch,
     WorkplaceDatesGTEWorkplaceRespPatch, ProjectDatesGTEProjectTechnologyPatch, WorkplaceRespDatesCrossingPatch,
+    TechnologyUniqueTogetherWithProfilePatch,
 )
 
 from django.db.models import Func
@@ -175,4 +176,15 @@ class ProjectDatesGTEProjectTechnology(Func):
         look at model_constrains.project_dates_gte_project_technology
     """
     function = ProjectDatesGTEProjectTechnologyPatch.name
+    arity = 3
+
+
+class TechnologyUniqueTogetherWithProfile(Func):
+    """
+        Accepts `expressions` with 3 elements
+        [F(technology.model._meta.pk.attname), F(technology.attname), F(profile.attname)]
+
+        look at model_constrains.technology_unique_together_with_profile
+    """
+    function = TechnologyUniqueTogetherWithProfilePatch.name
     arity = 3

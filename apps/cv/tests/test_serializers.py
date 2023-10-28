@@ -14,8 +14,9 @@ from pathlib import Path
 from typing import Optional, Any, Callable, Type, Union
 
 from django.conf import settings
-from django.contrib.auth.models import User, UserManager
+from django.contrib.auth.models import User, UserManager, AnonymousUser
 from django.core.files import File
+from django.core.files.storage import Storage
 from django.db import IntegrityError
 from django.db.models import QuerySet, Model
 from django.db.transaction import atomic
@@ -101,6 +102,8 @@ class TestCRUBaseSerializerProto:
         # authenticate as profile.user
         if user is not None:
             request.user = user
+        else:
+            request.user = AnonymousUser()
         return request
 
     @functools.cached_property
@@ -547,6 +550,7 @@ class TestProjectSerializer(TestEducationSerializer):
 
         CVProject
             profile = models.ForeignKey(CVUserProfile, on_delete=models.CASCADE)
+            title = models.CharField(max_length=248)
             description = models.CharField(max_length=248)
             prerequisite = models.CharField(max_length=248)
             result = models.CharField(max_length=48)
@@ -562,11 +566,14 @@ class TestProjectSerializer(TestEducationSerializer):
         """
         return [
             {'profile': self.profile, 'begin': datetime.date(2010, 1, 1), 'end': datetime.date(2012, 3, 1),
-             'description': 'Some project description', 'prerequisite': 'market requirements', 'result': 'is done'},
+             'title': 'Some project title', 'description': 'Some project description',
+             'prerequisite': 'market requirements', 'result': 'is done'},
             {'profile': self.profile, 'begin': datetime.date(2012, 3, 1), 'end': datetime.date(2012, 7, 12),
-             'description': 'Next project description', 'prerequisite': 'own needs', 'result': 'in process'},
+             'title': 'Next project title', 'description': 'Next project description',
+             'prerequisite': 'own needs', 'result': 'in process'},
             {'profile': self.profile, 'begin': datetime.date(2010, 1, 1), 'end': None,
-             'description': 'Other project description', 'prerequisite': 'Busyness', 'result': 'investigation'},
+             'title': 'Other project title', 'description': 'Other project description',
+             'prerequisite': 'Busyness', 'result': 'investigation'},
         ]
 
     # TODO: Probably need to add the date range crossing tests
@@ -665,6 +672,10 @@ class TestProfileSerializer(TestRUBadUserMixin, TestCRUBaseSerializerMixin, APIT
     """
     serializer_class = serializers.ProfileSerializer
 
+    def setUp(self) -> None:
+        super().setUp()
+        self.photo_file_path_orig = pathlib.Path(__file__).parent / 'media' / 'hedgehog-1215140_960_720.jpg'
+
     @functools.cached_property
     def users(self) -> list[User]:
         user_mgr: UserManager = self.serializer_class._declared_fields['user'].Meta.model.objects
@@ -702,7 +713,7 @@ class TestProfileSerializer(TestRUBadUserMixin, TestCRUBaseSerializerMixin, APIT
                 'photo': lambda o: self.serializer_class(
                     context={'request': self.get_request()}
                 ).fields['photo'].to_representation(o.photo),
-                'birthday': lambda o: str(o.birthday),
+                'birthday': lambda o: str(o.birthday) if o.birthday is not None else None,
             }
         ) | {'user': self._get_test_representation_of_user(obj.user)}
 
@@ -712,7 +723,6 @@ class TestProfileSerializer(TestRUBadUserMixin, TestCRUBaseSerializerMixin, APIT
         if not hasattr(self, '_current_object'):
             profile_model: Type[models.CVUserProfile] = self.serializer_class.Meta.model
             self._current_object = profile_model.objects.create(**self.get_model_kwargs()[0] | kwargs)
-            pass
 
         return self._current_object
 
@@ -733,6 +743,39 @@ class TestProfileSerializer(TestRUBadUserMixin, TestCRUBaseSerializerMixin, APIT
 
         return self._bad_user
 
+    def _get_photo_file_name(self, user: User, file_suffix='.jpg'):
+        return '{}_{}{}'.format(user.username, user.pk, file_suffix)
+
+    def test_create_with_image_file(self):
+        storage: Storage = models.CVUserProfile._meta.get_field('photo').storage
+
+        self.assertFalse(
+            storage.exists(self.photo_file_path_orig.name),
+            f'File `{self.photo_file_path_orig.name}` must not exist in {storage.location}'
+        )
+
+        # dummy request for authentication ...
+        request = self.get_request()
+        dst_file_name = self._get_photo_file_name(request.user)
+
+        with File(open(self.photo_file_path_orig, 'rb'), name='m5eu6ueu.jpg') as f:
+            ser = self.serializer_class(data={'photo': f}, context={'request': request})
+            is_valid = ser.is_valid()
+            self.assertTrue(is_valid)
+            ser.save()
+
+        try:
+            obj = models.CVUserProfile.objects.get(user=request.user)
+            # to make sure the data is serialized appropriately
+            self.assertDictEqual(ser.data, self.serialize_model_object(obj))
+
+            self.assertEqual(str(obj.photo), dst_file_name)
+            # 3. file exists in destination
+            self.assertTrue(storage.exists(dst_file_name))
+        finally:
+            # 4. unlink
+            storage.delete(dst_file_name)
+
 
 class TestProfilePhotoSerializer(TestProfileSerializer):
     """
@@ -746,129 +789,145 @@ class TestProfilePhotoSerializer(TestProfileSerializer):
             photo = models.ImageField(null=True, blank=True)
     """
     serializer_class = serializers.ProfilePhotoSerializer
-    source_image_file_path = settings.MEDIA_ROOT / 'boy-909552_960_720.jpg'
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.photo1_file_path_orig = pathlib.Path(__file__).parent / 'media' / 'boy-909552_960_720.jpg'
 
     def test_create(self):
         with self.assertRaises(PermissionDenied) as exc:
             super().test_create()
 
+    def _copy_photo_file_to_media(self, origin_file_path: pathlib.Path = None) ->pathlib.Path:
+        origin_file_path = origin_file_path or self.photo_file_path_orig
+
+        self.assertTrue(origin_file_path.is_file(), f'origin file does not exist {origin_file_path}')
+
+        dst_file_path = settings.MEDIA_ROOT / origin_file_path.name
+        shutil.copy(origin_file_path, dst_file_path, follow_symlinks=False)
+        self.assertTrue(
+            dst_file_path.is_file(), f'origin file `{origin_file_path}` is not copied to `{dst_file_path}`'
+        )
+        return dst_file_path
+
     def test_create_model_object(self):
         """
             This simple test shows that any filename can put as value of 'photo'
+            Was left to the learning purposes to show subtleties of behaviour
         """
 
-        photo_file_path = settings.MEDIA_ROOT / 'hedgehog-1215140_960_720.jpg'
-        self.assertTrue(photo_file_path.exists())
-        self.assertTrue(photo_file_path.is_file())
-        obj = self.serializer_class.Meta.model.objects.create(
-            **self.get_model_kwargs()[0] | {'photo': photo_file_path.name}
-        )
-        self.assertEqual(str(obj.photo), photo_file_path.name)
+        photo_file_path = self._copy_photo_file_to_media()
+        photo_field = self.serializer_class.Meta.model._meta.get_field('photo')
+        origin_upload_to = photo_field.upload_to
+        # turn `upload_to` off
+        photo_field.upload_to = ''
+        try:
+            # File exists in target
+            obj = self.serializer_class.Meta.model.objects.create(
+                **self.get_model_kwargs()[0] | {'photo': photo_file_path.name}
+            )
 
-        # Assign wrong filename
-        wrong_photo_file_path = photo_file_path.with_stem(photo_file_path.name +'_wrong')
-        self.assertFalse(wrong_photo_file_path.exists())
-        obj.photo = wrong_photo_file_path.name
-        obj.save()
-        self.assertEqual(str(obj.photo), wrong_photo_file_path.name)
+            self.assertEqual(str(obj.photo), photo_file_path.name)
 
-        # create copy of file with different name
-        self.assertTrue(photo_file_path.exists())
-        with File(open(photo_file_path, 'rb'), name=photo_file_path.name) as f:
-            obj.photo = f
+            # Assign wrong filename (File does exist in target)
+            wrong_photo_file_path = photo_file_path.with_stem(photo_file_path.name +'_wrong')
+            self.assertFalse(wrong_photo_file_path.exists())
+            obj.photo = wrong_photo_file_path.name
             obj.save()
-        self.assertNotEqual(str(obj.photo), photo_file_path.name)
-        self.assertTrue(str(obj.photo).startswith(photo_file_path.stem))
-        # delete the file that was created
-        pathlib.Path(obj.photo.path).unlink()
+            obj.refresh_from_db()
+            self.assertEqual(str(obj.photo), wrong_photo_file_path.name)
 
-    def test_image_clone_to(self):
-        # 1. copy image from original source
-        dst_path: Path = self.source_image_file_path.parent / ('res-' + self.source_image_file_path.name)
-        shutil.copy(self.source_image_file_path, dst_path)
+            # create copy of file with different name due to name duplication
+            self.assertTrue(photo_file_path.exists())
+            with File(open(photo_file_path, 'rb'), name=photo_file_path.name) as f:
+                obj.photo = f
+                obj.save()
+            try:
+                self.assertNotEqual(str(obj.photo), photo_file_path.name)
+                self.assertTrue(str(obj.photo).startswith(photo_file_path.stem))
+            finally:
+                # delete the file that was created
+                pathlib.Path(obj.photo.path).unlink()
+        finally:
+            pathlib.Path(photo_file_path).unlink()
+            photo_field.upload_to = origin_upload_to
+
+    def test_model_upload_to_behaviour(self):
+        # attach a file that exists by copying the image from the original source
+        # 1. Copying an image file from the original source
+        photo_file_path = self._copy_photo_file_to_media()
         try:
             obj: models.CVUserProfile = self.create_object()
-            with self.assertRaises(ValueError) as exc:
-                self.assertIsNone(obj.photo.path)
-            self.assertEqual('The \'photo\' attribute has no file associated with it.', str(exc.exception))
+            # same pattern as in `upload_to`
+            dest_filename = self._get_photo_file_name(obj.user, photo_file_path.suffix)
+            try:
+                with self.assertRaises(ValueError) as exc:
+                    self.assertIsNone(obj.photo.file)
+                self.assertEqual('The \'photo\' attribute has no file associated with it.', str(exc.exception))
 
-            # 2. save via ImageField.save()
-            old_obj_photo_str = str(obj.photo)
-            obj.photo.name = dst_path.name
-            obj.save()
+                obj.photo = photo_file_path.name
+                obj.save()
+                # and testing accessibility as obj.photo.file
+                self.assertIsInstance(obj.photo.file, File)
+                self.assertTrue(obj.photo.storage.exists(obj.photo.name))
 
-            # 3. test image_field.path, exists in destination
-            self.assertEqual(obj.photo.path, str(dst_path))
+                # 2. save via ImageField.save() will create file with name that defined by `upload_to` attribute
+                accepted_filename = 'khjkhkj.jpg'
+                with File(open(photo_file_path, 'rb'), name=accepted_filename) as f:
+                    obj.photo = f
+                    obj.save()
 
-            files = obj.photo.storage.listdir(settings.MEDIA_ROOT)
-            self.assertIn(obj.photo.name, files[1])
+                # old file was deleted
+                self.assertFalse(obj.photo.storage.exists(photo_file_path.name))
+                # file with accepted_filename was not created
+                self.assertFalse(obj.photo.storage.exists(accepted_filename))
+                # new file was created
+                self.assertTrue(obj.photo.storage.exists(dest_filename))
+
+                # update file with other content
+                orig_size = obj.photo.size
+                with File(open(self.photo1_file_path_orig, 'rb'), name='dgsfgs.jpg') as f:
+                    obj.photo = f
+                    obj.save()
+
+                # file with `dest_filename` exists
+                self.assertTrue(obj.photo.storage.exists(dest_filename))
+                # file was updated
+                self.assertNotEqual(orig_size, obj.photo.storage.size(dest_filename))
+            finally:
+                # clearance
+                obj.photo.storage.delete(dest_filename)
         finally:
-            # remove destination file
-            dst_path.unlink()
+            if photo_file_path.is_file():
+                photo_file_path.unlink()
 
-        files = obj.photo.storage.listdir(settings.MEDIA_ROOT)
-        self.assertNotIn(obj.photo.name, files[1])
+    def test_create_with_image_file(self):
+        with self.assertRaises(PermissionDenied):
+            super().test_create_with_image_file()
 
-        self.assertNotEqual(old_obj_photo_str, dst_path.name)
-        self.assertEqual(str(obj.photo), dst_path.name)
-
-    def test_image_file_upload(self):
-        # 1. create destination file name
-        upl_file_path = self.source_image_file_path.parent / ('uploaded-' + self.source_image_file_path.name)
-        # unlink (delete if exists)
-        upl_file_path.unlink(missing_ok=True)
-
+    def test_update_image_file(self):
         obj: models.CVUserProfile = self.create_object()
+        request = self.get_request()
 
-        request = APIRequest(
-            APIRequestFactory().put('/', content_type='application/json'),
-            parsers=(parsers.JSONParser(), parsers.MultiPartParser(), parsers.FileUploadParser())
-        )
-        request.user = obj.user
+        storage: Storage = obj.photo.storage
 
-        # 2. Open image from original source and tie with the destination file name
-        with File(open(self.source_image_file_path, 'rb'), name=upl_file_path.name) as f:
+        dst_filename = self._get_photo_file_name(request.user)
+        # 2. Open image from original source and "upload"
+        with File(open(self.photo_file_path_orig, 'rb'), name='rtrtyert.jpg') as f:
             ser = self.serializer_class(obj, data={'photo': f}, context={'request': request})
             is_valid = ser.is_valid()
             self.assertTrue(is_valid)
             ser.save()
-
-        # to make sure the data is serialized appropriately
-        self.assertDictEqual(ser.data, self.serialize_model_object(obj))
-
-        # 3. test image_field.path, exists in destination
-        self.assertEqual(str(obj.photo), upl_file_path.name)
-        files = obj.photo.storage.listdir(settings.MEDIA_ROOT)
-        self.assertIn(obj.photo.name, files[1])
-
-        # 4. unlink
-        upl_file_path.unlink(missing_ok=True)
-
-    def test_image_rename(self):
-        # 1. create object (model's instance)
-
-        self.assertTrue(self.source_image_file_path.exists())
-        self.assertTrue(self.source_image_file_path.is_file())
-        obj = self.serializer_class.Meta.model.objects.create(
-            **self.get_model_kwargs()[0] | {'photo': self.source_image_file_path.name}
-        )
-        self.assertEqual(str(obj.photo), self.source_image_file_path.name)
-
-        dst_file_path = self.source_image_file_path.with_stem('dfgdfgdfg____hfghfghfgh')
-        obj.photo.name = dst_file_path.name
-        obj.save()
-        self.assertEqual(obj.photo.path, str(dst_file_path))
-        self.assertNotEqual(obj.photo.path, str(self.source_image_file_path))
-        self.assertFalse(dst_file_path.exists())
-
-        self.source_image_file_path.rename(dst_file_path)
         try:
-            self.assertTrue(dst_file_path.exists())
-            self.assertFalse(self.source_image_file_path.exists())
-        finally:
-            dst_file_path.rename(self.source_image_file_path)
+            # to make sure the data is serialized appropriately
+            self.assertDictEqual(ser.data, self.serialize_model_object(obj))
 
-        self.assertTrue(self.source_image_file_path.exists())
+            # 3. file exists in destination
+            self.assertEqual(str(obj.photo), dst_filename)
+            self.assertTrue(storage.exists(dst_filename))
+        finally:
+            # 4. unlink
+            storage.delete(dst_filename)
 
 
 class TestResourcesSerializer(TestRUBadUserMixin, TestCRUBaseSerializerMixin, APITestCase):
@@ -918,7 +977,7 @@ class TestResourcesSerializer(TestRUBadUserMixin, TestCRUBaseSerializerMixin, AP
         self.assertDictEqual(ser.data, self.serialize_model_object(obj))
 
 
-class TestTechnologiesSerializer(TestResourcesSerializer):
+class TestTechnologiesSerializer(TestRUBadUserMixin, TestCRUBaseSerializerMixin, APITestCase):
     """
         Dictionary like (for all users):
         'Python', 'SQL', 'Oracle' etc
@@ -931,6 +990,169 @@ class TestTechnologiesSerializer(TestResourcesSerializer):
 
     def get_model_kwargs(self) -> list[dict]:
         return [{'technology': 'Python'}, {'technology': 'SQL'}]
+
+    @functools.cached_property
+    def users(self) -> list[User]:
+        user_model: User = models.get_user_model()
+        return [
+            user_model.objects.create_user(username='test_staff_user', email='test_staff_user@test.lan', is_staff=True),
+            user_model.objects.create_user(username='test_user', email='test_user@test.lan'),
+            user_model.objects.create_user(username='test_profiled_user', email='test_profiled_user@test.lan')
+        ]
+
+    @functools.cached_property
+    def profile(self) -> models.CVUserProfile:
+        return models.CVUserProfile.objects.create(user=self.users[2])
+
+    def get_request(self, user=None, method='get', method_data: dict = None):
+        if user is None:
+            user = self.users[0]
+        return super().get_request(user, method, method_data)
+
+    def get_bad_user(self):
+        return self.users[1]
+
+    def test_retrieve_bad_user(self):
+        # Any users can retrieve data
+        # test for registered not staff user
+        with self.assertRaises(AssertionError, msg='PermissionDenied not raised') as exc:
+            super().test_retrieve_bad_user()
+        self.assertEqual(
+            'PermissionDenied not raised',
+            str(exc.exception),
+            'Exception was raised dut it is not PermissionDenied'
+        )
+
+    def test_retrieve_ex(self):
+        # Any users can retrieve data
+        # test for AnonymousUser
+        ser = self.serializer
+        ser.context['request'] = super().get_request()
+        obj = self.create_object()
+        ser.instance = obj
+        self.assertDictEqual(ser.data, self.serialize_model_object(obj))
+
+    def post_test_create(self):
+        # need to test if user is staff (staff used by default) then
+        # serializers.TechnologiesSerializer.Meta.model.profile must be None
+        self.assertIsNone(self.serializer.instance.profile)
+
+    def test_create_ex(self):
+        # if regular User then serializers.TechnologiesSerializer.Meta.model.profile must be setted
+        ser = self.serializer
+
+        for sub_msg, sub_r in (
+                ('user is Anonymous -> PermissionDenied', super().get_request()),
+                ('user has no profile -> PermissionDenied', self.get_request(self.users[1]))
+        ):
+            with self.subTest(sub_msg):
+                ser.context['request'] = sub_r
+                ser.initial_data = self.get_serializer_data()
+                self.assertTrue(ser.is_valid())
+                with self.assertRaises(PermissionDenied) as exc:
+                    obj = ser.save()
+
+        with self.subTest('user has profile'):
+            ser.context['request'] = self.get_request(self.profile.user)
+            ser.initial_data = self.get_serializer_data()
+            self.assertTrue(ser.is_valid())
+            obj: models.CVTechnologies = ser.save()
+            self.assertIsNotNone(obj.pk)
+            self.assertEqual(obj.profile, self.profile)
+            self.assertDictEqual(ser.data, self.serialize_model_object(obj))
+
+    def post_test_update(self):
+        # update for staff -> test profile is None
+        self.assertIsNone(self.serializer.instance.profile)
+
+    def test_update_ex(self):
+        ser: Serializer = self.serializer
+        ser.context['request'] = self.get_request()  # for .users[0] -> no profile but staff
+
+        # test technology is created by user and it updates by staff -> can change .profile to None
+        obj = self.create_object(profile=self.profile)  # for .get_model_kwargs()[0] and .profile->.users[2]
+        ser.instance = obj
+        ser.initial_data = self.get_model_kwargs()[1] | {'profile': None}
+        with self.subTest('Staff can change .profile to None'):
+            self.assertIsNotNone(obj.profile)
+            self.assertTrue(ser.is_valid())
+            ser.save()
+            self.assertIsNone(obj.profile)
+            # to make sure the data is serialized appropriately
+            self.assertDictEqual(ser.data, self.serialize_model_object(obj))
+
+        # test technology is created by user and it updates by staff in other User -> can change .profile to other user
+        profile_user1 = models.CVUserProfile.objects.create(user=self.users[1])
+        obj.profile = profile_user1
+        obj.save()
+        self.assertNotEqual(self.profile, obj.profile)
+        ser.__dict__.pop('_validated_data', None)
+        ser.__dict__.pop('_data', None)
+        ser.initial_data = self.get_model_kwargs()[0] | {'profile': self.profile.pk}
+        with self.subTest('Staff can change .profile to other user'):
+            self.assertTrue(ser.is_valid())
+            ser.save()
+            self.assertIsNotNone(obj.profile)
+            self.assertEqual(self.profile, obj.profile)
+
+            # to make sure the data is serialized appropriately
+            self.assertDictEqual(ser.data, self.serialize_model_object(obj))
+
+        # test technology that created by user and it updates by himself -> can change own technology
+        ser.context['request'] = self.get_request(user=obj.profile.user)
+        ser.initial_data = {'technology': 'TECH_WAS_CHANGED', 'profile': profile_user1.pk}
+        self.assertNotEqual(obj.technology, ser.initial_data.get('tecnology'))
+        self.assertEqual(ser.context['request'].user, ser.instance.profile.user)
+        self.assertNotEqual(ser.initial_data.get('profile'), ser.instance.profile.pk)
+        ser.__dict__.pop('_validated_data', None)
+        ser.__dict__.pop('_data', None)
+        with self.subTest('User can change data of himself'):
+            self.assertTrue(ser.is_valid())
+            ser.save()
+            self.assertEqual(ser.context['request'].user, ser.instance.profile.user)
+            self.assertNotEqual(profile_user1, obj.profile)
+
+            obj.refresh_from_db()
+            self.assertEqual(ser.initial_data['technology'], obj.technology)
+            # to make sure the data is serialized appropriately
+            self.assertDictEqual(ser.data, self.serialize_model_object(obj))
+
+    def test_update_bad_user_ex(self):
+
+        ser: Serializer = self.serializer
+        ser.context['request'] = self.get_request(user=self.profile.user)  # for .users[2] -> regular user
+
+        # test technology is created by user but other user try to update this technology
+        # -> can't change .profile of other profile
+        profile_user1 = models.CVUserProfile.objects.create(user=self.users[1])
+        obj = self.create_object(profile=profile_user1)  # for .get_model_kwargs()[0] and .profile->.users[2]
+        obj_profile_id = obj.profile_id
+        ser.instance = obj
+        ser.initial_data = self.get_model_kwargs()[1] | {'profile': self.profile.pk}
+        with self.subTest('User can\'t change .profile of other profile'):
+            self.assertNotEqual(self.profile, obj.profile)
+            self.assertTrue(ser.is_valid())
+            with self.assertRaises(PermissionDenied) as exc:
+                ser.save()
+
+            obj.refresh_from_db()
+            self.assertEqual(obj_profile_id, obj.profile_id)
+
+        # test technology is created by user and it updates by user but try to set other profile
+        # -> can't change .profile to None or other profile
+
+        obj.profile = self.profile
+        obj.save()
+        self.assertEqual(self.profile, obj.profile)
+        ser.__dict__.pop('_validated_data', None)
+        ser.__dict__.pop('_data', None)
+        ser.initial_data = self.get_model_kwargs()[1] | {'profile': profile_user1.pk}
+        with self.subTest('User can\'t change .profile to other profile'):
+            self.assertTrue(ser.is_valid())
+            self.assertNotEqual(ser.validated_data['profile'], ser.instance.profile)
+            ser.save()
+            obj.refresh_from_db()
+            self.assertEqual(self.profile.pk, obj.profile_id)
 
 
 class TestProjectTechnologySerializer(CVUserProfileMixin, TestRUBadUserMixin, TestCRUBaseSerializerMixin, APITestCase):
@@ -955,15 +1177,18 @@ class TestProjectTechnologySerializer(CVUserProfileMixin, TestRUBadUserMixin, Te
         return [
             model.objects.create(
                 profile=self.profile, begin=datetime.date(2010, 1, 1), end=datetime.date(2012, 3, 1),
-                description='Some project description', prerequisite='market requirements', result='is done'
+                title='Some project title', description='Some project description',
+                prerequisite='market requirements', result='is done'
             ),
             model.objects.create(
                 profile=self.profile, begin=datetime.date(2012, 3, 2), end=datetime.date(2012, 7, 12),
-                description='Next project description', prerequisite='own needs', result='in process'
+                title='Next project title', description='Next project description',
+                prerequisite='own needs', result='in process'
             ),
             # model.objects.create(
             #     profile=self.profile, begin=datetime.date(2010, 1, 1), end=None,
-            #     description='Other project description', prerequisite='Busyness', result='investigation'
+            #     title='Other project title', description='Other project description',
+            #     prerequisite='Busyness', result='investigation'
             # ),
         ]
 
@@ -1009,7 +1234,7 @@ class TestProjectTechnologySerializer(CVUserProfileMixin, TestRUBadUserMixin, Te
             Result should be:
             {
             'id': 1,
-            'project': {'id': 1, 'description': 'Some project description', 'url': 'http://testserver/cv/api/profile/'},
+            'project': {'id': 1,'title': 'Some project title', 'description': 'Some project description', 'url': 'http://testserver/cv/api/profile/'},
             'technology': {'id': 1, 'technology': 'Python'},
             'duration': '15 00:00:00',
             'notes': 'some Notes for 11111'
@@ -1017,7 +1242,7 @@ class TestProjectTechnologySerializer(CVUserProfileMixin, TestRUBadUserMixin, Te
         """
         proj_data = {
             obj.project._meta.pk.column: obj.project.pk,
-            'description': obj.project.description,
+            'title': obj.project.title,
             self.serializer.url_field_name: reverse(self.serializer.project_view_name, request=self.serializer.context.get('request'))
         }
 
@@ -1045,7 +1270,8 @@ class TestProjectTechnologySerializer(CVUserProfileMixin, TestRUBadUserMixin, Te
         # create or get a project for different user
         bad_project = models.CVProject.objects.create(
             profile=self.profiles[2], begin=datetime.date(2010, 1, 1), end=None,
-            description='Project description for different user', prerequisite='Busyness', result='investigation'
+            title='Project title for different user', description='Project description for different user',
+            prerequisite='Busyness', result='investigation'
         )
         data['project'] = bad_project.pk
 
@@ -1207,7 +1433,7 @@ class TestWorkplaceProjectSerializer(CVUserProfileMixin, TestRUBadUserMixin, Tes
             workplace = models.ForeignKey(CVWorkplace, on_delete=models.CASCADE)
                 {id: <int>, workplace: <str:248>, begin: <datetime.date>, end: <datetime.date>, url: <str>}
             project = models.ForeignKey(CVProject, on_delete=models.CASCADE)
-                {id: <int>, description: <str:248>, begin: <datetime.date>, end: <datetime.date>, url: <str>}
+                {id: <int>, title: <str:248>, begin: <datetime.date>, end: <datetime.date>, url: <str>}
     """
 
     serializer_class = serializers.WorkplaceProjectSerializer
@@ -1244,15 +1470,18 @@ class TestWorkplaceProjectSerializer(CVUserProfileMixin, TestRUBadUserMixin, Tes
         return [
             model.objects.create(
                 profile=self.profile, begin=datetime.date(2010, 1, 1), end=datetime.date(2011, 2, 10),
-                description='Some 1st project description', prerequisite='market requirements', result='is done'
+                title='Some 1st project title', description='Some 1st project description',
+                prerequisite='market requirements', result='is done'
             ),
             model.objects.create(
                 profile=self.profile, begin=datetime.date(2011, 2, 11), end=datetime.date(2012, 2, 28),
-                description='Some 2nd project description', prerequisite='market requirements', result='is done'
+                title='Some 2nd project title', description='Some 2nd project description',
+                prerequisite='market requirements', result='is done'
             ),
             model.objects.create(
                 profile=self.profile, begin=datetime.date(2012, 3, 2), end=datetime.date(2012, 7, 12),
-                description='Next 1st project description', prerequisite='own needs', result='in process'
+                title='Next 1st project title', description='Next 1st project description',
+                prerequisite='own needs', result='in process'
             ),
         ]
 
@@ -1288,7 +1517,7 @@ class TestWorkplaceProjectSerializer(CVUserProfileMixin, TestRUBadUserMixin, Tes
             },
             'project': {
                 'id': 1,
-                'description': 'Some project',
+                'title': 'Some title',
                 'begin': '2010-01-21',
                 'end': '2012-01-20'
                 'url': 'http://testserver/cv/api/profile/'},
@@ -1310,7 +1539,7 @@ class TestWorkplaceProjectSerializer(CVUserProfileMixin, TestRUBadUserMixin, Tes
         proj_ser = serializers.ProjectSerializer()
         project_data = {
             proj._meta.pk.column: proj.pk,
-            'description': proj.description,
+            'title': proj.title,
             'begin': proj_ser.fields['begin'].to_representation(proj.begin),
             'end': proj_ser.fields['end'].to_representation(proj.end),
             self.serializer.url_field_name: reverse(
@@ -1326,7 +1555,8 @@ class TestWorkplaceProjectSerializer(CVUserProfileMixin, TestRUBadUserMixin, Tes
         model = models.CVProject
         return model.objects.create(
             profile=self.profiles[2], begin=datetime.date(2010, 1, 1), end=datetime.date(2011, 2, 10),
-            description='Project description for different user', prerequisite='market requirements', result='is done'
+            title='Project title for different user', description='Project description for different user',
+            prerequisite='market requirements', result='is done'
         )
 
     def test_create_workplace_with_bad_user(self):

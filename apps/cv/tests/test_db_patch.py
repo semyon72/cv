@@ -4,6 +4,7 @@
 # File: ${FILE_NAME}
 # Contact: Semyon Mamonov <semyon.mamonov@gmail.com>
 # Created by ox23 at 2023-05-11 (y-m-d) 4:08 PM
+from django.db.backends.base.base import BaseDatabaseWrapper
 from django.test import TestCase
 from django.db import connections, DEFAULT_DB_ALIAS
 
@@ -82,7 +83,7 @@ class TestPatcher(TestCase):
         for i, o in enumerate(patcher.get_patches()):
             with self.subTest(all_instances_validated=i):
                 self.assertListEqual(o.log, ['check'])
-                self.assertDictEqual(o._validated, {self.db_wrapper.alias: id(self.db_wrapper.connection)})
+                self.assertListEqual(o._validated, [self.db_wrapper.alias])
 
     def test_999_connect(self):
         patcher = type('DummyPatcher', (Patcher,), {'patches': [MockPatch, MockPatch()]})()
@@ -103,13 +104,13 @@ class TestPatcher(TestCase):
         for i, o in enumerate(patcher.get_patches()):
             with self.subTest(all_instances_validated=i):
                 self.assertListEqual(o.log, ['check'])
-                self.assertDictEqual(o._validated, {db_wrapper.alias: id(db_wrapper.connection)})
+                self.assertListEqual(o._validated, [db_wrapper.alias])
 
 
 class TestBasePatch(TestCase):
 
     def setUp(self) -> None:
-        self.db_wrapper = connections['default']
+        self.db_wrapper: BaseDatabaseWrapper = connections['default']
         self.patch = BasePatch(self.db_wrapper)
 
     def test_0_db_wrapper(self):
@@ -167,26 +168,30 @@ class TestBasePatch(TestCase):
             self.patch.patch()
 
     def test_9999_validate(self):
-
         patch = MockPatch(self.db_wrapper)
         patch.validate()
-        self.assertDictEqual({patch.db_wrapper.alias: id(patch.db_wrapper.connection)}, patch._validated)
+        self.assertListEqual([patch.db_wrapper.alias], patch._validated)
         self.assertListEqual(patch.log, ['check'])
 
         patch.log.clear()
         patch.validate()
-        self.assertListEqual(patch.log, [])
+        self.assertListEqual(
+            patch.log, ['check'] if patch.db_wrapper.vendor in patch.databases_require_patch_on_each_connection else []
+        )
 
         patch.log.clear()
         patch._validated.clear()
         patch.check_retval = False
         patch.validate()
-        self.assertDictEqual({patch.db_wrapper.alias: id(patch.db_wrapper.connection)}, patch._validated)
+        self.assertListEqual([patch.db_wrapper.alias], patch._validated)
         self.assertListEqual(patch.log, ['check', 'patch'])
 
         patch.log.clear()
         patch.validate()
-        self.assertListEqual(patch.log, [])
+        self.assertListEqual(
+            patch.log,
+            ['check', 'patch'] if patch.db_wrapper.vendor in patch.databases_require_patch_on_each_connection else []
+        )
 
 
 class TestCountRangeIntersectionPatch(TestCase):

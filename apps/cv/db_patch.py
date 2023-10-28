@@ -11,13 +11,25 @@ from typing import Optional, Union, Type, Callable
 from django.db.backends.base.base import BaseDatabaseWrapper
 from django.db.backends.signals import connection_created
 
-BACKEND_VENDORS = ('postgresql', 'mariadb', 'mysql', 'oracle', 'sqlite')
+
+BACKEND_VENDOR_POSTGRESQL = 'postgresql'
+BACKEND_VENDOR_MARIADB = 'mariadb'
+BACKEND_VENDOR_MYSQL = 'mysql'
+BACKEND_VENDOR_ORACLE = 'oracle'
+BACKEND_VENDOR_SQLITE = 'sqlite'
+
+BACKEND_VENDORS: set = {
+    BACKEND_VENDOR_POSTGRESQL, BACKEND_VENDOR_MARIADB, BACKEND_VENDOR_MYSQL,
+    BACKEND_VENDOR_ORACLE, BACKEND_VENDOR_SQLITE
+}
 
 
 class BasePatch:
 
+    databases_require_patch_on_each_connection = (BACKEND_VENDOR_SQLITE,)
+
     def __init__(self, db_wrapper: BaseDatabaseWrapper = None):
-        self._validated = {}  # {connection.alias: id(connection), .... }
+        self._validated = []  # [connection.alias, .... ]
         self.db_wrapper: BaseDatabaseWrapper = db_wrapper
 
     @property
@@ -35,20 +47,36 @@ class BasePatch:
 
     def validate(self):
         """
-            Implements default logic.
-            If alias hasn't processed yet then it will check and if returned False then patch it
+        Default logic is:
+            If the alias hasn't been processed yet, then it will check for availability in the database.
+            Otherwise, if the check returned False, the database will be patched.
             In both cases
                 self._validated[self.db_wrapper.alias] = id(self.connection)
 
-            !!! For SQLite user-defined function need implements different behaviour.
-            Every time when connection changed it must create (declare) user-defined function again
+        !!! We have implemented a different behaviour for the SQLite user-defined function.
+        Every time the connection has changed, we must recreate (declare) the user-defined function.
         """
-        # alias doesn't exist -> do check
-        if self.db_wrapper.alias not in self._validated:
+        # Why is it implemented this way?
+        #
+        # The next (old) logic
+        #    if self.db_wrapper.alias not in self._validated:  # alias doesn't exist -> do check
+        # can work for all databases, the one exception is SQLite when Django is started twice.
+        # Thus, two groups of code will use same namespace.
+        #
+        # For example, It happens when you run a HTTP server that shares global variables with other code
+        # that will be executed. A particular case, you run manage.py runserver
+        # (or through an instance of LiveServerThread ) and right after that you run manage.py some_command
+        # which the HTTP server uses.
+        #
+        # The old logic won't work for SQLite because SQLite requires
+        # a user-defined function to be created (declared) every time a connection changes.
+
+        a = self.db_wrapper.alias
+        if a not in self._validated or self.db_wrapper.vendor in self.databases_require_patch_on_each_connection:
             # need full process
             if not self.check():  # database can satisfy already, for example - user-defined function in MySQL
                 self.patch()
-            self._validated[self.db_wrapper.alias] = id(self.db_wrapper.connection)
+            self._validated.append(a)
 
     def _get_handler(self, type_handler) -> Callable[[BaseDatabaseWrapper, object], Optional[bool]]:
         hname = '_'.join((type_handler, self.db_wrapper.vendor))

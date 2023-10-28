@@ -13,7 +13,7 @@ Also, It embraces all the main aspects of software development for REST API:
 - Database constraints/logical integrity (to check the date ranges crossing, for example)
 - Creating the serializators with control over both some restrictions and integrity checking at this level.
 - Creating the views (it does not embrace ViewSet-s) that behave like a ViewSet with some additional checks at this level.
-- Testing all parts of described above. Both simple tests like "what I think is what I write" and tests that follow the the DRY methodology and should probably be tested as well :)
+- Testing all parts of described above. Both simple tests like "what I think is what I write" and tests that follow the DRY methodology and should probably be tested as well :)
 
 This project was started to achieve two main goals:
 - Acquire practice/confidence and learn more about the components of the Django REST Framework.
@@ -192,3 +192,12 @@ At this time, I have not finally decided whether the project will be free for us
 At the same time, I know for sure that just as I used the advice and learned the code of others, the code of this project can be useful for beginners. Thus - feel free to use it for educational purposes.
 
 I will consider this project more successful if, using the code or ideas, you include a link to this project in your work.
+
+# Additional information
+
+### 2023-10-28: Lots of refactoring and reworking. The main feature that has been added is a command to load user data.
+- usage ```manage.py loaduserdata test_user !2#4%6&8 "~/.../cv/my_cv.json"``` 
+- database is ready to use and contains test_user/!2#4%6&8 and data from my_cv.json    
+- my_cv.json contains my CV data as an example (instead of documentation)
+- automatically created resources are limited ['email', 'skype', 'git', 'site', 'tel', 'telegram']. You can extend this list by adding the required data directly to the cv_cvresources table  
+- this version does not remove redundant data (which is not in my_cv.json) from the database

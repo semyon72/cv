@@ -304,6 +304,7 @@ class TestCVProjects(TestCase):
 
         kwargs = {
             'profile': cv_models.CVUserProfile.objects.create(user=self.user),
+            'title': 'some title',
             'description': 'fgdfg',
             'prerequisite': 'kllk',
             'result': 'kjlk',
@@ -314,11 +315,13 @@ class TestCVProjects(TestCase):
         model = cv_models.CVProject
 
         # check constraint
+        self._test_text_constraint_for(model, 'title', **kwargs)
         self._test_text_constraint_for(model, 'description', **kwargs)
         self._test_text_constraint_for(model, 'prerequisite', **kwargs)
         self._test_text_constraint_for(model, 'result', **kwargs)
 
         # check success
+        self._test_check_success_for(model, 'title', **kwargs).delete()
         self._test_check_success_for(model, 'description', **kwargs).delete()
         self._test_check_success_for(model, 'prerequisite', **kwargs).delete()
         self._test_check_success_for(model, 'result', **kwargs).delete()
@@ -331,6 +334,8 @@ class TestCVProjects(TestCase):
 
         # check begin is None constraint
         _test_begin_is_none_constraint(self, model, **kwargs)
+
+        # TODO: add or check the test constraint for description field due to change Char to Text(max_length=8*1024)
 
     def test_07_cvtechnologies(self):
         """
@@ -358,7 +363,7 @@ class TestCVProjects(TestCase):
         proj_begin, proj_end = datetime.date(2023, 5, 15), datetime.date.today()
         project = cv_models.CVProject.objects.create(
             profile=cv_models.CVUserProfile.objects.create(user=self.user),
-            description='fgdfg', prerequisite='kllk', result='kjlk',
+            title='tttttt', description='fgdfg', prerequisite='kllk', result='kjlk',
             begin=proj_begin, end=proj_end
         )
 
@@ -579,7 +584,7 @@ class TestCVProjects(TestCase):
         workplace = cv_models.CVWorkplace.objects.create(**wp_kwargs)
 
         proj_kwargs = {# cv_models.CVProject._meta.pk.attname: 5,
-            'profile': cv_profile, 'description': 'fgdfg', 'prerequisite': 'dfgdfg',
+            'profile': cv_profile, 'title': 'tttttt', 'description': 'fgdfg', 'prerequisite': 'dfgdfg',
             'result': 'fgsfdgsf', 'begin': begin, 'end': end,
         }
         dummy_project = cv_models.CVProject.objects.create(** proj_kwargs | {'end': begin + datetime.timedelta(2)})
@@ -674,7 +679,7 @@ class TestCVProjects(TestCase):
         wp_kwargs = {'profile': cv_profile, 'workplace': 'fgdfg', 'begin': wpb, 'end': wpe}
         workplace = cv_models.CVWorkplace.objects.create(**wp_kwargs)
 
-        proj_kwargs = {'profile': cv_profile, 'description': 'fgdfg', 'prerequisite': 'dfgdfg',
+        proj_kwargs = {'profile': cv_profile, 'title': 'ttttt', 'description': 'fgdfg', 'prerequisite': 'dfgdfg',
                        'result': 'fgsfdgsf', 'begin': wpb, 'end': wpe}
 
         dummy_project = cv_models.CVProject.objects.create(** proj_kwargs | {'end': wpb + datetime.timedelta(2)})
@@ -781,7 +786,8 @@ class TestCVProjects(TestCase):
         # test - CVProject
         kw_proj = {
             'profile': cv_profile1, 'begin': begin, 'end': end,
-            'description': '...DESCRIPTION...', 'prerequisite': '...PREREQUISITE...', 'result': '...RESULT...',
+            'title': '...TITLE...', 'description': '...DESCRIPTION...',
+            'prerequisite': '...PREREQUISITE...', 'result': '...RESULT...',
         }
         _check_models(cv_models.CVProject, kw_proj, cv_profile2)
 
@@ -848,7 +854,8 @@ class TestCVProjects(TestCase):
         # test - CVProject
         proj = cv_models.CVProject.objects.create(
             profile=cv_profile, begin=begin, end=end,
-            description='...DESCRIPTION...', prerequisite='...PREREQUISITE...', result='...RESULT...',
+            title='...TITLE...', description='...DESCRIPTION...',
+            prerequisite='...PREREQUISITE...', result='...RESULT...',
         )
         self.assertIsNotNone(proj.pk)
 

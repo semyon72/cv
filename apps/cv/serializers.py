@@ -15,6 +15,7 @@ from django.core.files.base import ContentFile
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.db import IntegrityError
 from django.db.models import Model
+from django.http import Http404
 
 from rest_framework.exceptions import PermissionDenied, NotAuthenticated, ValidationError
 from rest_framework.fields import empty
@@ -34,15 +35,28 @@ from rest_framework import serializers, settings
 def get_user_profile(request: Request) -> models.CVUserProfile:
     if not request.user.is_authenticated:
         raise NotAuthenticated()
-    return get_object_or_404(models.CVUserProfile, user=request.user)
+    try:
+        profile = get_object_or_404(models.CVUserProfile, user=request.user)
+    except Exception as exc:
+        if isinstance(exc, Http404):
+            raise PermissionDenied(str(exc))
+        raise exc
+
+    return profile
 
 
 def catch_integrity_raise_validation(ser: Serializer, cback, *cback_args, **cback_kwargs):
     # tests that `cback` is not bound to an instance.
     args = []
+
     slf = getattr(cback, '__self__', None)
     if slf is None:
         args.append(ser)
+
+    if isinstance(cback, functools.partial) and (
+            (cback.args and cback.args[0] is ser) or (cback.keywords.get('self') is ser)
+    ):
+        args.clear()
 
     args.extend(cback_args)
     try:
@@ -142,15 +156,7 @@ class CVBaseSerializer(serializers.ModelSerializer):
         return super(CVBaseSerializer, CVBaseSerializer).to_representation(self, instance)
 
     def validate_action(self, cback: callable, *cback_args, **cback_kwargs):
-        try:
-            result = cback(*cback_args, **cback_kwargs)
-        except IntegrityError as exc:
-            super(Serializer, self).errors.update({
-                settings.api_settings.NON_FIELD_ERRORS_KEY: [str(exc)]
-            })
-            raise ValidationError(self.errors)
-
-        return result
+        return catch_integrity_raise_validation(self, cback, *cback_args, **cback_kwargs)
 
     def update(self, instance, validated_data):
         # to eliminate mistakes in permissions, additional clearance.
@@ -231,14 +237,65 @@ class ResourcesSerializer(CVBaseReadonlyOrAdminSerializer):
         fields = '__all__'
 
 
-class TechnologiesSerializer(CVBaseReadonlyOrAdminSerializer):
+class TechnologiesSerializer(serializers.ModelSerializer):
     """
-        Support access readonly-for_all or write-staff_user
+        Support access that has some different behaviour for logged user:
+        Read:
+            Logged (current) User can see either own or common (.profile is null) rows
+            Any Users can read any rows where .profile is null
+
+        Create/Update:
+            if User is staff then models.CVTechnologies.profile will contain Null
+            otherwise will contain profile of logged (current) user
+
+        Delete:
+            The plain User can delete the technologies that created by him.
+            The staff User can delete any technologies
+
+        readonly-for_all or write-staff_user
     """
+
+    _has_request = CVBaseSerializer._has_request
 
     class Meta:
         model = models.CVTechnologies
         fields = '__all__'
+
+    def save(self):
+        self._has_request()
+        user: User = self.context['request'].user
+        if not user.is_authenticated:
+            raise PermissionDenied()
+        return super().save()
+
+    def to_representation(self, instance: models.CVTechnologies):
+        self._has_request()
+        user: User = self.context['request'].user
+        if instance.profile is None:
+            # Any Users can read any rows where .profile is null
+            pass
+        elif not user.is_authenticated or instance.profile.user != user:
+            PermissionDenied()
+        return super().to_representation(instance)
+
+    def create(self, validated_data):
+        # we already had the tests in .save() - _has_request and is_authenticated.
+        r = self.context['request']
+        validated_data['profile'] = None if r.user.is_staff else get_user_profile(r)
+        return catch_integrity_raise_validation(self, super().create, validated_data)
+
+    def update(self, instance: models.CVTechnologies, validated_data):
+        # we already had the tests in .save() - _has_request and is_authenticated.
+        r = self.context['request']
+        # only staff can change .profile to any values
+        # registered users can change only own technologies
+        if not r.user.is_staff:
+            cur_user_profile = get_user_profile(r)
+            validated_data.pop('profile', None)  # disable a modification of instance.profile
+            if instance.profile != cur_user_profile:
+                raise PermissionDenied()
+
+        return catch_integrity_raise_validation(self, super().update, instance, validated_data)
 
 
 class ProjectTechnologySerializer(serializers.ModelSerializer):
@@ -246,7 +303,7 @@ class ProjectTechnologySerializer(serializers.ModelSerializer):
     CVProjectTechnology
         id
         project = models.ForeignKey(CVProject, on_delete=models.CASCADE)
-            { id, profile -> url, description, prerequisite, result, begin, end }
+            { id, profile -> url, title, description, prerequisite, result, begin, end }
         technology = models.ForeignKey(CVTechnologies, on_delete=models.CASCADE)
             { id, technology }
         duration = models.DurationField(null=True, blank=True)
@@ -269,7 +326,7 @@ class ProjectTechnologySerializer(serializers.ModelSerializer):
         project = obj.project
         res = {
             project._meta.pk.column: project.pk,
-            'description': project.description,
+            'title': project.title,
             self.url_field_name: reverse(self.project_view_name, request=self.context.get('request'))
         }
         return res
@@ -286,17 +343,6 @@ class ProjectTechnologySerializer(serializers.ModelSerializer):
         data['project'] = self.get_project_representation(instance)
         data['technology'] = self.get_technology_representation(instance)
         return data
-
-    def validate_action(self, cback: callable, *cback_args, **cback_kwargs):
-        try:
-            result = cback(*cback_args, **cback_kwargs)
-        except IntegrityError as exc:
-            super(Serializer, self).errors.update({
-                settings.api_settings.NON_FIELD_ERRORS_KEY: [str(exc)]
-            })
-            raise ValidationError(self.errors)
-
-        return result
 
     def update(self, instance: models.CVProjectTechnology, validated_data: dict):
         self.check_project_owning(instance.project, validated_data.get('project'))
@@ -365,7 +411,7 @@ class ProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.CVUserProfile
-        fields = ['id', 'user', 'birthday', 'photo']
+        fields = ['id', 'user', 'birthday', 'photo', 'soft_skill', 'summary_qualification', 'position', 'cover_letter']
 
     def check_owning(self, profile: models.CVUserProfile):
         request = self.context.get('request', None)
@@ -420,14 +466,14 @@ class ProfileSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         # We explicitly set the user that was logged
         validated_data['user'] = self.context['request'].user
-        return super().create(validated_data)
+        return catch_integrity_raise_validation(self, super().create, validated_data)
 
     def update(self, profile, validated_data):
         # to eliminate mistakes in permissions, additional clearance.
         user = validated_data.pop('user', None)
         self.check_owning(profile)
 
-        return super().update(profile, validated_data)
+        return catch_integrity_raise_validation(self, super().update, profile, validated_data)
 
 
 class ProfilePhotoSerializer(ProfileSerializer):
@@ -440,8 +486,8 @@ class ProfilePhotoSerializer(ProfileSerializer):
     """
 
     class Meta(ProfileSerializer.Meta):
-        fields = ['id', 'user', 'birthday', 'photo']
-        readonly = ['id', 'user', 'birthday']
+        pass
+    Meta.readonly = [fn for fn in Meta.fields if fn != 'photo']
 
     def to_internal_value(self, data):
         parser = self.selected_parser
@@ -522,7 +568,7 @@ class WorkplaceProjectSerializer(serializers.ModelSerializer):
             project,
             read_only=True,
             context={'request': req}
-        ).data.items() if f in ('id', 'description', 'begin', 'end')}
+        ).data.items() if f in ('id', 'title', 'begin', 'end')}
         res[self.url_field_name] = reverse(self.project_view_name, request=req)
         return res
 

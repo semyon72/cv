@@ -14,6 +14,7 @@ from hashlib import md5
 from typing import Type
 
 from django.conf import settings
+from django.db.transaction import atomic
 from django.test.utils import override_settings
 from django.contrib.auth.models import User
 from django.core.files import File
@@ -134,7 +135,8 @@ class TestProfile(TestCase):
                              'date_joined': date_joined_field.to_representation(self.user.date_joined),
                              'url': reverse('cv:user', request=request),
                              },
-                    'birthday': None, 'photo': None}
+                    'birthday': None, 'photo': None,
+                    'soft_skill': None, 'summary_qualification': None, 'position': None, 'cover_letter': None}
             self.assertDictEqual(tres, response.data)
 
         _url = reverse('cv:profile', [self.profile.pk])
@@ -243,7 +245,7 @@ class TestProfile(TestCase):
         dst_img_path.unlink(missing_ok=True)
 
     def test_update_multipart(self):
-        src_img_path = pathlib.Path(settings.MEDIA_ROOT / 'boy-909552_960_720.jpg')
+        src_img_path = pathlib.Path(__file__).parent / 'media' / 'boy-909552_960_720.jpg'
         content = encode_multipart(
             BOUNDARY,
             {
@@ -256,7 +258,7 @@ class TestProfile(TestCase):
         self._test_update_multipart_json(request)
 
     def test_update_json(self):
-        src_img_path = pathlib.Path(settings.MEDIA_ROOT / 'boy-909552_960_720.jpg')
+        src_img_path = pathlib.Path(__file__).parent / 'media' / 'boy-909552_960_720.jpg'
 
         content = {
             'birthday': datetime.date(2002, 2, 20),
@@ -272,7 +274,7 @@ class TestProfilePhotoUpdate(APITestCase):
     def setUp(self) -> None:
         self.profile_photo_view_name = 'cv:profile-photo'
         self.password = '12345678'
-        self.src_img_path = pathlib.Path(settings.MEDIA_ROOT / 'boy-909552_960_720.jpg')
+        self.src_img_path = pathlib.Path(__file__).parent / 'media' / 'boy-909552_960_720.jpg'
 
     @functools.cached_property
     def users(self) -> list[User]:
@@ -504,6 +506,12 @@ class TestResource(TestCase):
 
 class TestTechnology(TestCase):
 
+    two_steps_defense_forbidden_assertion = AssertionError(
+        'Warning: look at TechnologiesListCreate.get_queryset. '
+        'By default this view has 2-steps defense - on the query and permission levels. '
+        'Thus, in this case, the access was limited by TechnologyPermission'
+    )
+
     def setUp(self) -> None:
         user_model: User = get_user_model()
         self.user = user_model.objects.create_user(
@@ -523,17 +531,24 @@ class TestTechnology(TestCase):
             with self.subTest(f'technology {i}: `{res}`'):
                 data = {'technology': res}
                 response = self.client.post(url, data=data)
-                self.assertDictEqual(data | {'id': i}, response.data)
+                self.assertDictEqual(
+                    data | {
+                        'id': i,
+                        'technology_type': models.CVTechnologies.TECHNOLOGY_TYPES_DEFAULT_CHOICE,
+                        'profile': None},
+                    response.data
+                )
                 self.assertEqual(status.HTTP_201_CREATED, response.status_code)
 
-        all_res = list(models.CVTechnologies.objects.values().all())
+        all_res = list(models.CVTechnologies.objects.values('id', 'technology', 'technology_type', 'profile').all())
         self.assertEqual(len(self.test_technologies), len(all_res))
 
         # fail creation for duplicate
         tech = self.test_technologies[0]
         with self.subTest(f'technology 1 (duplicate is denied): `{tech}`'):
-            response = self.client.post(url, data={'technology': tech})
-            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+            with atomic():
+                response = self.client.post(url, data={'technology': tech})
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
         # fail creation for plain user
         self.client.force_authenticate(self.user, token=None)
@@ -602,6 +617,276 @@ class TestTechnology(TestCase):
                     test_obj.save()
                 else:
                     self.assertDictEqual(model_to_dict(test_obj), model_to_dict(model.objects.get(pk=test_obj.pk)))
+
+    def _init_technologies(self) -> list[models.CVTechnologies]:
+
+        profiles = [
+            models.CVUserProfile.objects.create(user=self.user),
+            models.CVUserProfile.objects.create(
+                user=type(self.user).objects.create(username='test_dummy_user', email='test_dummy_user@technologies.cv.lan')
+            ),
+        ]
+        objs = [
+            models.CVTechnologies.objects.create(
+                technology=tech, profile=profiles[i] if i < len(profiles) else None
+            ) for i, tech in enumerate(self.test_technologies)
+        ]
+        return objs
+
+    def test_retrieve_for_staff(self):
+        # staff can see rows for all users
+        self.client.force_authenticate(user=self.staff_user)
+        objs = self._init_technologies()
+        obj = filter(lambda o: o.profile is not None, objs).__next__()
+        response = self.client.get(reverse('cv:technology-rud', [obj.pk]))
+        with self.subTest('Retrieve'):
+            self.assertEqual(status.HTTP_200_OK, response.status_code)
+            self.assertEqual(response.data['technology'], obj.technology)
+            self.assertIsNotNone(response.data['profile'])
+
+        response = self.client.get(reverse('cv:technology-lc'))
+        with self.subTest('List'):
+            self.assertEqual(status.HTTP_200_OK, response.status_code)
+            self.assertIsInstance(response.data, list)
+            self.assertEqual(len(objs), len(response.data))
+
+    def test_create_for_staff(self):
+        # staff can create rows for all users (profile is null)
+        self.client.force_authenticate(user=self.staff_user)
+        tech_val = 'HGHJHGJH'
+        sub_tests = (
+            ('default -> profile is Null', {'technology': tech_val}),
+            (
+                'profile is user but resulted profile is null',
+                {'technology': tech_val, 'profile': models.CVUserProfile.objects.create(user=self.user).pk}
+            )
+        )
+
+        for test_msg, post_data in sub_tests:
+            response = self.client.post(reverse('cv:technology-lc'), data=post_data)
+            with self.subTest(test_msg):
+                self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+                obj = models.CVTechnologies.objects.filter(technology=tech_val)
+                self.assertEqual(1, len(obj))
+                self.assertEqual(response.data['technology'], obj[0].technology)
+                self.assertIsNone(response.data['profile'])
+                obj.delete()
+
+    def test_update_for_staff(self):
+        # staff can update rows for all users
+        objs = self._init_technologies()
+        self.client.force_authenticate(user=self.staff_user)
+        upd_tech = 'KLJKLJKL'
+        profiled_objs = filter(lambda o: o.profile is not None, objs)
+        obj = profiled_objs.__next__()
+        obj1 = profiled_objs.__next__()
+
+        with self.subTest('Change profile to other user'):
+            orig_obj_profile = obj.profile
+            response = self.client.put(
+                reverse('cv:technology-rud', [obj.pk]),
+                data={'technology': upd_tech, 'profile': obj1.profile.pk}
+            )
+            self.assertEqual(status.HTTP_200_OK, response.status_code)
+            self.assertEqual(response.data['profile'], obj1.profile.pk)
+            self.assertNotEqual(response.data['profile'], orig_obj_profile.pk)
+            obj.refresh_from_db()
+            self.assertEqual(obj1.profile, obj.profile)
+
+        upd_tech = '$#$%$%$'
+        with self.subTest('Change profile to Null'):
+            orig_obj_profile = obj.profile
+            response = self.client.put(
+                reverse('cv:technology-rud', [obj.pk]),
+                # 'profile': '' will set profile in None value for MultiPartParser (default)
+                # If pass the format='json' (JSONParser) then 'profile': None will be equivalent
+                data={'technology': upd_tech, 'profile': ''}
+            )
+            self.assertEqual(status.HTTP_200_OK, response.status_code)
+            self.assertIsNone(response.data['profile'])
+            self.assertIsNotNone(orig_obj_profile)
+            obj.refresh_from_db()
+            self.assertIsNone(obj.profile)
+
+    def test_delete_for_staff(self):
+        # staff can delete rows for all users
+        objs = self._init_technologies()
+        self.client.force_authenticate(user=self.staff_user)
+        obj = filter(lambda o: o.profile is not None, objs).__next__()
+        obj_profile_null = filter(lambda o: o.profile is None, objs).__next__()
+        for msg, o in (('profile has value', obj), ('profile is None', obj_profile_null)):
+            with self.subTest(msg):
+                response = self.client.delete(reverse('cv:technology-rud', [o.pk]))
+                self.assertEqual(status.HTTP_204_NO_CONTENT, response.status_code)
+                self.assertRaises(models.CVTechnologies.DoesNotExist, o.refresh_from_db)
+
+    def test_retrieve_for_anonymous(self):
+        # unauthenticated user can see only rows where profile is null
+        objs_init = self._init_technologies()
+        self.client.force_authenticate(None, None)
+
+        objs = [*filter(lambda o: o.profile is not None, objs_init)]
+        objs_profile_null = [*filter(lambda o: o.profile is None, objs_init)]
+
+        with self.subTest('retrieve common technology'):
+            response = self.client.get(reverse('cv:technology-rud', [objs_profile_null[0].pk]))
+            self.assertEqual(status.HTTP_200_OK, response.status_code)
+            self.assertEqual(objs_profile_null[0].pk, response.data['id'])
+
+        with self.subTest('list common technology'):
+            response = self.client.get(reverse('cv:technology-lc'))
+            self.assertEqual(status.HTTP_200_OK, response.status_code)
+            self.assertIsInstance(response.data, list)
+            self.assertEqual(len(objs_profile_null), len(response.data))
+
+        with self.subTest('the permission is denied for request that has owned technology (profile is not null)'):
+            response = self.client.get(reverse('cv:technology-rud', [objs[0].pk]))
+
+            if response.status_code == status.HTTP_403_FORBIDDEN:
+                raise self.two_steps_defense_forbidden_assertion
+            self.assertEqual(status.HTTP_404_NOT_FOUND, response.status_code)
+
+    def test_create_for_anonymous(self):
+        # An unauthenticated user can't create
+        self.client.force_authenticate(None, None)
+        response = self.client.post(
+            reverse('cv:technology-lc'), data={'technology': self.test_technologies[0]}
+        )
+        self.assertEqual(status.HTTP_403_FORBIDDEN, response.status_code)
+
+    def test_update_for_anonymous(self):
+        # unauthenticated user can\'t update
+        objs_init = self._init_technologies()
+        self.client.force_authenticate(None, None)
+        response = self.client.put(reverse('cv:technology-rud', [objs_init[0].pk]), data={'technology': '%^RFG'})
+        self.assertEqual(status.HTTP_403_FORBIDDEN, response.status_code)
+
+    def test_delete_for_anonymous(self):
+        # An unauthenticated user can\'t delete
+        objs_init = self._init_technologies()
+        self.client.force_authenticate(None, None)
+        response = self.client.delete(reverse('cv:technology-rud', [objs_init[0].pk]))
+        self.assertEqual(status.HTTP_403_FORBIDDEN, response.status_code)
+
+    def test_retrieve_for_user(self):
+        # authenticated user can see rows where profile is null and himself
+        objs_init = self._init_technologies()
+        obj: models.CVTechnologies = filter(lambda o: o.profile is not None, objs_init).__next__()
+        obj_com: models.CVTechnologies = filter(lambda o: o.profile is None, objs_init).__next__()
+        objs = [*filter(lambda o: o.profile is None or o == obj, objs_init)]
+        objs_other = [*filter(lambda o: o.profile is not None and o != obj, objs_init)]
+
+        self.client.force_authenticate(obj.profile.user, None)
+
+        with self.subTest('retrieve - their technologies is granted'):
+            self.assertIsNotNone(obj.profile)
+            response = self.client.get(reverse('cv:technology-rud', [obj.pk]))
+            self.assertEqual(status.HTTP_200_OK, response.status_code)
+            self.assertEqual(obj.pk, response.data['id'])
+
+        with self.subTest('retrieve - common technologies is granted'):
+            self.assertIsNone(obj_com.profile)
+            response = self.client.get(reverse('cv:technology-rud', [obj_com.pk]))
+            self.assertEqual(status.HTTP_200_OK, response.status_code)
+            self.assertEqual(obj_com.pk, response.data['id'])
+
+        with self.subTest('list - their and common technologies are granted'):
+            response = self.client.get(reverse('cv:technology-lc'))
+            self.assertEqual(status.HTTP_200_OK, response.status_code)
+            self.assertIsInstance(response.data, list)
+            self.assertEqual(len(objs), len(response.data))
+
+        with self.subTest('retrieve - forbidden for technology of other user'):
+            self.assertIsNotNone(objs_other[0].profile)
+            response = self.client.get(reverse('cv:technology-rud', [objs_other[0].pk]))
+            if response.status_code == status.HTTP_403_FORBIDDEN:
+                raise self.two_steps_defense_forbidden_assertion
+            self.assertEqual(status.HTTP_404_NOT_FOUND, response.status_code)
+
+    def test_create_for_user(self):
+        # unauthenticated user can create for himself, profile is user\'s profile'
+        objs = self._init_technologies()
+        obj = filter(lambda o: o.profile is not None, objs).__next__()
+        self.client.force_authenticate(obj.profile.user)
+        with self.subTest('successful for himself'):
+            response = self.client.post(reverse('cv:technology-lc'), data={'technology': 'UIYIUYUIY'})
+            self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+            self.assertEqual(response.data['profile'], obj.profile.pk)
+            type(obj).objects.get(pk=response.data['id']).delete()
+
+        obj_other = filter(lambda o: o.profile is not None and o.profile != obj.profile, objs).__next__()
+        with self.subTest('successful for other but profile is current user'):
+            response = self.client.post(
+                reverse('cv:technology-lc'),
+                data={'technology': 'UIYIUYUIY', 'profile': obj_other.profile.pk}
+            )
+            self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+            self.assertEqual(response.data['profile'], obj.profile.pk)
+
+    def test_update_for_user(self):
+        # unauthenticated user can update for himself, profile is user\'s profile
+        objs = self._init_technologies()
+        obj = filter(lambda o: o.profile is not None, objs).__next__()
+        self.client.force_authenticate(obj.profile.user)
+
+        upd_tech = 'UIYIUYUIY'
+        with self.subTest('successful for himself'):
+            self.assertNotEqual(upd_tech, obj.technology)
+            response = self.client.put(reverse('cv:technology-rud', [obj.pk]), data={'technology': upd_tech})
+            self.assertEqual(status.HTTP_200_OK, response.status_code)
+            obj.refresh_from_db()
+            self.assertEqual(response.data['technology'], obj.technology)
+            self.assertEqual(upd_tech, obj.technology)
+
+        obj_com = filter(lambda o: o.profile is None, objs).__next__()
+        orig_tech = obj_com.technology
+        with self.subTest('unsuccessful for common technology (profile is null)'):
+            self.assertNotEqual(upd_tech, orig_tech)
+            response = self.client.put(
+                reverse('cv:technology-rud', [obj_com.pk]),
+                data={'technology': upd_tech}
+            )
+            self.assertEqual(status.HTTP_403_FORBIDDEN, response.status_code)
+            obj_com.refresh_from_db()
+            self.assertEqual(orig_tech, obj_com.technology)
+
+        obj_other = filter(lambda o: o.profile is not None and o.profile != obj.profile, objs).__next__()
+        orig_tech = obj_other.technology
+        with self.subTest('unsuccessful for technology that other user is owned (profile is other user)'):
+            self.assertNotEqual(upd_tech, orig_tech)
+            response = self.client.put(
+                reverse('cv:technology-rud', [obj_other.pk]),
+                data={'technology': upd_tech}
+            )
+            self.assertEqual(status.HTTP_404_NOT_FOUND, response.status_code)
+            obj_other.refresh_from_db()
+            self.assertEqual(orig_tech, obj_other.technology)
+
+    def test_delete_for_user(self):
+        # unauthenticated user can delete for himself, profile is user\'s profile
+        objs = self._init_technologies()
+        obj = filter(lambda o: o.profile is not None, objs).__next__()
+        obj_com = filter(lambda o: o.profile is None, objs).__next__()
+        obj_other = filter(lambda o: o.profile is not None and o.profile != obj.profile, objs).__next__()
+
+        self.client.force_authenticate(obj.profile.user)
+        with self.subTest('successful for himself'):
+            response = self.client.delete(reverse('cv:technology-rud', [obj.pk]))
+            self.assertEqual(status.HTTP_204_NO_CONTENT, response.status_code)
+            with self.assertRaises(type(obj).DoesNotExist):
+                obj.refresh_from_db()
+
+        with self.subTest('unsuccessful for common technology (profile is null)'):
+            response = self.client.delete(reverse('cv:technology-rud', [obj_com.pk]))
+            self.assertEqual(status.HTTP_403_FORBIDDEN, response.status_code)
+            obj_com.refresh_from_db()
+
+        with self.subTest('unsuccessful for technology that other user is owned (profile is other user)'):
+            response = self.client.delete(reverse('cv:technology-rud', [obj_other.pk]))
+            if response.status_code == status.HTTP_403_FORBIDDEN:
+                raise self.two_steps_defense_forbidden_assertion
+            self.assertEqual(status.HTTP_404_NOT_FOUND, response.status_code)
+            obj_other.refresh_from_db()
 
 
 class TestEducation(TestCase):
@@ -911,6 +1196,7 @@ class TestProject(TestEducation):
     """
     CVProject
         profile = models.ForeignKey(CVUserProfile, on_delete=models.CASCADE)
+        title = models.CharField(max_length=248)
         description = models.CharField(max_length=248)
         prerequisite = models.CharField(max_length=248)
         result = models.CharField(max_length=48)
@@ -924,6 +1210,7 @@ class TestProject(TestEducation):
     def get_model_kwargs(self) -> dict:
         return {
             'profile': self.profile,
+            'title': 'Some title',
             'description': 'Some description',
             'prerequisite': 'Some prerequisite',
             'result': 'Some result',
@@ -934,6 +1221,7 @@ class TestProject(TestEducation):
     def get_update_model_kwargs(self) -> dict:
         return {
             'profile': self.profile,
+            'title': 'UPD: Some title',
             'description': 'UPD: Some description',
             'prerequisite': 'UPD: Some prerequisite',
             'result': 'UPD: Some result',
@@ -1036,8 +1324,9 @@ class TestProjectTechnology(TestEducation):
     def get_model_kwargs(self) -> dict:
         return {
             'project': models.CVProject.objects.create(
-                profile=self.profile, description='Some description', prerequisite='Some prerequisite',
-                result='Some result', begin=datetime.date(2010, 5, 5), end=datetime.date(2011, 1, 1)
+                profile=self.profile, title='Some title', description='Some description',
+                prerequisite='Some prerequisite', result='Some result',
+                begin=datetime.date(2010, 5, 5), end=datetime.date(2011, 1, 1)
             ),
             'technology': models.CVTechnologies.objects.create(technology='Python'),
             'duration': datetime.timedelta(days=123),  # must be in [project.begin..project.end]
@@ -1047,8 +1336,9 @@ class TestProjectTechnology(TestEducation):
     def get_update_model_kwargs(self) -> dict:
         return {
             'project': models.CVProject.objects.create(
-                profile=self.profile, description='UPD: Some description', prerequisite='UPD: Some prerequisite',
-                result='UPD: Some result', begin=datetime.date(2011, 2, 2), end=datetime.date(2013, 1, 1)
+                profile=self.profile, title='UPD: Some title', description='UPD: Some description',
+                prerequisite='UPD: Some prerequisite', result='UPD: Some result',
+                begin=datetime.date(2011, 2, 2), end=datetime.date(2013, 1, 1)
             ),
             'technology': models.CVTechnologies.objects.create(technology='SQL'),
             'duration': datetime.timedelta(days=123),  # must be in [project.begin..project.end]
@@ -1060,8 +1350,9 @@ class TestProjectTechnology(TestEducation):
 
     def get_bad_profile_attr_object(self) -> tuple[str, Model]:
         return 'project', models.CVProject.objects.create(
-            profile=self.profiles[1], description='Bad PROF-1: description', prerequisite='Bad PROF-1: prerequisite',
-            result='Bad PROF-1: result', begin=datetime.date(2015, 5, 5), end=datetime.date(2016, 6, 6)
+            profile=self.profiles[1], title='Bad PROF-1: title', description='Bad PROF-1: description',
+            prerequisite='Bad PROF-1: prerequisite', result='Bad PROF-1: result',
+            begin=datetime.date(2015, 5, 5), end=datetime.date(2016, 6, 6)
         )
 
     def _test_object_created(self, response: Response):
@@ -1221,19 +1512,25 @@ class TestWorkplaceProject(TestEducation):
         return [
             # for self.workplaces[0]
             models.CVProject.objects.create(
-                profile=self.profile, description='Some project #1 description for  WRKPL#1',
+                profile=self.profile,
+                title='Some project #1 title for WRKPL#1',
+                description='Some project #1 description for  WRKPL#1',
                 prerequisite='Some project #1 prerequisite for WRKPL#1', result='Some result #1 for WRKPL#1',
                 begin=datetime.date(2010, 5, 5), end=datetime.date(2010, 7, 7)
             ),
             # for self.workplaces[1]
             models.CVProject.objects.create(
-                profile=self.profile, description='Some project #1 description for WRKPL#2',
+                profile=self.profile,
+                title='Some project #1 title for WRKPL#2',
+                description='Some project #1 description for WRKPL#2',
                 prerequisite='Some project #1 prerequisite for WRKPL#2', result='Some result #1 for WRKPL#2',
                 begin=datetime.date(2011, 3, 3), end=datetime.date(2011, 9, 9),
             ),
             # for self.workplaces[1]
             models.CVProject.objects.create(
-                profile=self.profile, description='Some project #2 description for WRKPL#2',
+                profile=self.profile,
+                title='Some project #2 title for WRKPL#2',
+                description='Some project #2 description for WRKPL#2',
                 prerequisite='Some project #2 prerequisite for WRKPL#2', result='Some result #2 for WRKPL#2',
                 begin=datetime.date(2011, 10, 10), end=datetime.date(2012, 2, 2),
             ),
@@ -1265,7 +1562,9 @@ class TestWorkplaceProject(TestEducation):
                 begin=datetime.date(2010, 5, 5), end=datetime.date(2011, 1, 1)
             ),
             'project': models.CVProject.objects.create(
-                profile=self.profiles[1], description='BAD: Some project description with self.profiles[1]',
+                profile=self.profiles[1],
+                title='BAD: Some project title with self.profiles[1]',
+                description='BAD: Some project description with self.profiles[1]',
                 prerequisite='BAD: Some project prerequisite with self.profiles[1]',
                 result='BAD: Some result with self.profiles[1]',
                 begin=datetime.date(2011, 10, 10), end=datetime.date(2012, 2, 2),

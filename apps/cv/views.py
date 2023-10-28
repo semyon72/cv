@@ -1,6 +1,7 @@
 from typing import Optional
 
-from django.db.models import Model, QuerySet
+from django.contrib.auth.models import User
+from django.db.models import Model, QuerySet, Q
 from django.http import Http404
 from django.shortcuts import render
 
@@ -11,7 +12,7 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import (IsAuthenticated, BasePermission, SAFE_METHODS, IsAdminUser, )
 
-from . import serializers
+from . import serializers, models
 
 # Staff (common for all)
 # class Resources:
@@ -43,6 +44,31 @@ class IsReadOnlyOrAdmin(BasePermission):
             request.method in SAFE_METHODS or
             (request.user and request.user.is_staff)
         )
+
+
+class TechnologyPermission(BasePermission):
+
+    def has_permission(self, request, view) -> bool:
+        """
+            retrieve for all and modification for registered users only
+        """
+        return request.method in SAFE_METHODS or (request.user and request.user.is_authenticated)
+
+    def has_object_permission(self, request, view, obj: models.CVTechnologies) -> bool:
+        # The next permissions were narrowed on previous step (in .has_permission)
+        # - Read only for safe methods
+        # - For unsafe methods, the unauthenticated users can't do any actions
+
+        # staff can do any actions
+        if request.user.is_staff:
+            return True
+
+        if request.method in SAFE_METHODS:
+            # an authenticated user can see public (.profile is None) and their own technologies
+            return obj.profile is None or obj.profile.user == request.user
+        else:
+            # an authenticated user can only operate on their own technologies
+            return obj.profile is not None and obj.profile.user == request.user
 
 
 class IsReadOnly(BasePermission):
@@ -160,15 +186,30 @@ class ResourcesRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
 
 
 class TechnologiesListCreate(generics.ListCreateAPIView):
-    permission_classes = [IsReadOnlyOrAdmin]
+    permission_classes = [TechnologyPermission]
     serializer_class = serializers.TechnologiesSerializer
     queryset = serializers.TechnologiesSerializer.Meta.model.objects.all()
+
+    def get_queryset(self):
+        q = super(TechnologiesListCreate, TechnologiesListCreate).get_queryset(self)
+        u: User = self.request.user
+        q_for_all = Q(profile__isnull=True)
+        if not u.is_authenticated:
+            q = q.filter(q_for_all)
+        elif not u.is_staff:
+            q = q.filter(q_for_all | Q(profile__user=u))
+        # else:
+        #     # staff can change all technologies
+        #     pass
+        return q
 
 
 class TechnologiesRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [IsReadOnlyOrAdmin]
+    permission_classes = [TechnologyPermission]
     serializer_class = serializers.TechnologiesSerializer
     queryset = serializers.TechnologiesSerializer.Meta.model.objects.all()
+
+    get_queryset = TechnologiesListCreate.get_queryset
 
 
 class CVBaseAPIView(mixins.ListModelMixin, mixins.CreateModelMixin, mixins.RetrieveModelMixin,
