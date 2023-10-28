@@ -196,7 +196,7 @@ I will consider this project more successful if, using the code or ideas, you in
 # Additional information
 
 ### 2023-10-28: Lots of refactoring and reworking. The main feature that has been added is a command to load user data.
-- usage ```manage.py loaduserdata test_user !2#4%6&8 "~/.../cv/my_cv.json"``` 
+- usage ```./manage.py loaduserdata test_user '!2#4%6&8' my_cv.json``` 
 - database is ready to use and contains test_user/!2#4%6&8 and data from my_cv.json    
 - my_cv.json contains my CV data as an example (instead of documentation)
 - automatically created resources are limited ['email', 'skype', 'git', 'site', 'tel', 'telegram']. You can extend this list by adding the required data directly to the cv_cvresources table  
