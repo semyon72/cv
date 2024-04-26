@@ -1,0 +1,16 @@
+{% extends 'cv_ui/index.html' %}
+{% load rest_framework %}
+
+{% block title %}Hobby{% endblock title %}
+    {% block content %}
+    <h3>Hobby</h3>
+    <form method="post" action="">
+        {% csrf_token %}
+    {% if serializer %}
+        {% render_form serializer %}
+    {% else %}
+        {% render_form data.serializer %}
+    {% endif %}
+        <button type="submit">Create</button>
+    </form>
+{% endblock content %}

@@ -1,0 +1,32 @@
+{#{% extends 'cv_ui/index.html' %}#}
+{#{% load cv_ui_extras %}#}
+{##}
+{#{% block title %}Education{% endblock title %}#}
+{##}
+{#{% block content %}#}
+{#    <h3>Education</h3>#}
+{#    <form method="post" action="">#}
+{#    {% add2context as buttons %}#}
+{#        {% if api_response.status_code != 404 %}#}
+{#            delete='<button type="submit" class="btn btn-primary">Delete</button>'#}
+{#            cancel='<a href="{% url 'cv_ui:education-retrieve' pk=data.id %}" class="btn btn-primary">Detail</a>'#}
+{#        {% endif %}#}
+{#        list='<a href="{% url 'cv_ui:education-list' %}" class="btn btn-primary">List</a>'#}
+{#    {% endadd2context %}#}
+{#    {% include 'cv_ui/common/delete_form.html' %}#}
+{#    </form>#}
+{#{% endblock content %}#}
+
+{% extends 'cv_ui/common/delete.html' %}
+
+{% block title %}Education{% endblock title %}
+
+{% block model_header %}Education{% endblock %}
+
+{% block buttons %}
+    {% if api_response.status_code != 404 %}
+        <button type="submit" class="btn btn-primary">Delete</button>
+        <a href="{% url 'cv_ui:education-retrieve' pk=data.id %}" class="btn btn-primary">Detail</a>
+    {% endif %}
+    <a href="{% url 'cv_ui:education-list' %}" class="btn btn-primary">List</a>
+{% endblock buttons %}

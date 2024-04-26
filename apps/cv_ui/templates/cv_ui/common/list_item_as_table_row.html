@@ -1,0 +1,21 @@
+{% load cv_ui_extras %}
+
+<tr>
+{% for k, v in item.items %}
+{% if exclude_keys and k not in exclude_keys %}
+    {% add2context as result %}
+        key='{% if k == "id" or k == "pk" %}#{% else %}{{ k|snake2cap }}{% endif %}'
+    {% endadd2context %}
+    <td data-label="{{ result.key }}">{{ v }}</td>
+{% endif %}
+{% endfor %}
+{% if buttons %}
+    <td>
+    {% for btn_key, btn_val in buttons.items %}
+        {{ btn_val }}
+    {% empty%}
+        &nbsp;
+    {% endfor %}
+    </td>
+{% endif %}
+</tr>

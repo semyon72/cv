@@ -1,0 +1,15 @@
+{% extends 'cv_ui/index.html' %}
+{% load rest_framework %}
+
+
+{% block title %}Hobby{% endblock title %}
+
+{% block content %}
+    <table>
+    <tr>
+        <td>{{ data.id }}</td>
+        <td>{{ data.profile }}</td>
+        <td>{{ data.description }}</td>
+    </tr>
+    </table>
+{% endblock content %}

@@ -7,7 +7,6 @@
 
 
 from .patches import (
-    CountRangeIntersectionPatch, EducationDatesCrossingPatch, WorkplaceDatesCrossingPatch, ProjectDatesCrossingPatch,
     WorkplaceRespDatesInWorkplacePatch, ProjectTechnologyDurationInProjectPatch, WorkplaceProjectSameUserPatch,
     WorkplaceProjectProjectDatesInWorkplacePatch, WorkplaceDatesGTEProjectPatch, ProjectDatesLTEWorkplacePatch,
     WorkplaceDatesGTEWorkplaceRespPatch, ProjectDatesGTEProjectTechnologyPatch, WorkplaceRespDatesCrossingPatch,
@@ -15,57 +14,6 @@ from .patches import (
 )
 
 from django.db.models import Func
-
-
-class RangeIntersectionFor(Func):
-    """
-        Accepts `expressions` with 7 elements
-        [F(opts.pk.attname), F(begin.attname), F(end.attname),
-         Value(opts.db_table), Value(begin.column), Value(end.column), Value(opts.pk.column)]
-
-        look at model_constrains.range_intersection_constraint
-    """
-    function = CountRangeIntersectionPatch.name
-    arity = 7
-
-
-class EducationDatesCrossing(Func):
-    """
-        Accepts `expressions` with 4 elements
-        pkv, uv, bv, ev - values of `pk`, `user_id`, `begin` and `end` fields
-
-        [F(opts.pk.attname), F(user.attname), F(begin.attname), F(end.attname)]
-
-        look at model_constrains.education_dates_crossing_constraint
-    """
-    function = EducationDatesCrossingPatch.name
-    arity = 4
-
-
-class WorkplaceDatesCrossing(Func):
-    """
-        Accepts `expressions` with 4 elements
-        pkv, uv, bv, ev - values of `pk`, `user_id`, `begin` and `end` fields
-
-        [F(opts.pk.attname), F(user.attname), F(begin.attname), F(end.attname)]
-
-        look at model_constrains.workplace_dates_crossing_constraint
-    """
-    function = WorkplaceDatesCrossingPatch.name
-    arity = 4
-
-
-class ProjectDatesCrossing(Func):
-    """
-        Accepts `expressions` with 4 elements
-        pkv, uv, bv, ev - values of `pk`, `user_id`, `begin` and `end` fields
-
-        [F(opts.pk.attname), F(user.attname), F(begin.attname), F(end.attname)]
-
-        look at model_constrains.project_dates_crossing_constraint
-    """
-    function = ProjectDatesCrossingPatch.name
-    arity = 4
 
 
 class WorkplaceRespDatesInWorkplace(Func):

@@ -1,0 +1,16 @@
+{% extends 'cv_ui/index.html' %}
+{% load cv_ui_extras %}
+
+{% block title %}Education{% endblock title %}
+
+{% block content %}
+    <h3>Education</h3>
+    <form method="post" action="">
+    {% add2context as buttons %}
+        submit='<button type="submit" class="btn btn-primary">Update</button>'
+        reset='<button type="reset" class="btn btn-primary">Reset</button>'
+        list='<a href="{% url 'cv_ui:education-list' %}" class="btn btn-primary">List</a>'
+    {% endadd2context %}
+    {% include 'cv_ui/common/update_form.html' %}
+    </form>
+{% endblock content %}

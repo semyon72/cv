@@ -1,0 +1,14 @@
+{% load rest_framework %}
+
+{% csrf_token %}
+{% for err in data.non_field_errors %}
+    {# non_field_errors are not processing by `render_form` template tag #}
+    <div class="alert alert-danger" role="alert">{{ err }}</div>
+{% endfor %}
+{% if serializer %}
+    {# if serializer exists then it is a GET method, no data were requested #}
+    {% render_form serializer %}
+{% else %}
+    {% render_form data.serializer %}
+{% endif %}
+    {{ buttons.create }}

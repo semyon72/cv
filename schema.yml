@@ -1,0 +1,2409 @@
+openapi: 3.0.3
+info:
+  title: CV Maker
+  version: 1.0.0
+  description: Allows you to create a tidy resume (curriculum vitae) in a convenient
+    way.
+paths:
+  /cv/api/education/:
+    get:
+      operationId: education_list
+      description: 'The URI may contain an optional parameter {id} at the end. Behaviour
+        of the actions: POST has no {id} -> `create`; GET has no {id} -> `list`; GET
+        has {id} -> `retrieve`; DELETE, PUT, PATCH must have {id} paratemeter.'
+      tags:
+      - education
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Education'
+          description: ''
+    post:
+      operationId: education_create
+      description: 'The URI may contain an optional parameter {id} at the end. Behaviour
+        of the actions: POST has no {id} -> `create`; GET has no {id} -> `list`; GET
+        has {id} -> `retrieve`; DELETE, PUT, PATCH must have {id} paratemeter.'
+      tags:
+      - education
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Education'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Education'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Education'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Education'
+          description: ''
+    put:
+      operationId: education_update
+      description: 'The URI may contain an optional parameter {id} at the end. Behaviour
+        of the actions: POST has no {id} -> `create`; GET has no {id} -> `list`; GET
+        has {id} -> `retrieve`; DELETE, PUT, PATCH must have {id} paratemeter.'
+      tags:
+      - education
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Education'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Education'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Education'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Education'
+          description: ''
+    patch:
+      operationId: education_partial_update
+      description: 'The URI may contain an optional parameter {id} at the end. Behaviour
+        of the actions: POST has no {id} -> `create`; GET has no {id} -> `list`; GET
+        has {id} -> `retrieve`; DELETE, PUT, PATCH must have {id} paratemeter.'
+      tags:
+      - education
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedEducation'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedEducation'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedEducation'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Education'
+          description: ''
+    delete:
+      operationId: education_destroy
+      description: 'The URI may contain an optional parameter {id} at the end. Behaviour
+        of the actions: POST has no {id} -> `create`; GET has no {id} -> `list`; GET
+        has {id} -> `retrieve`; DELETE, PUT, PATCH must have {id} paratemeter.'
+      tags:
+      - education
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: No response body
+  /cv/api/hobby/:
+    get:
+      operationId: hobby_list
+      description: 'The URI may contain an optional parameter {id} at the end. Behaviour
+        of the actions: POST has no {id} -> `create`; GET has no {id} -> `list`; GET
+        has {id} -> `retrieve`; DELETE, PUT, PATCH must have {id} paratemeter.'
+      tags:
+      - hobby
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Hobby'
+          description: ''
+    post:
+      operationId: hobby_create
+      description: 'The URI may contain an optional parameter {id} at the end. Behaviour
+        of the actions: POST has no {id} -> `create`; GET has no {id} -> `list`; GET
+        has {id} -> `retrieve`; DELETE, PUT, PATCH must have {id} paratemeter.'
+      tags:
+      - hobby
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Hobby'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Hobby'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Hobby'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Hobby'
+          description: ''
+    put:
+      operationId: hobby_update
+      description: 'The URI may contain an optional parameter {id} at the end. Behaviour
+        of the actions: POST has no {id} -> `create`; GET has no {id} -> `list`; GET
+        has {id} -> `retrieve`; DELETE, PUT, PATCH must have {id} paratemeter.'
+      tags:
+      - hobby
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Hobby'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Hobby'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Hobby'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Hobby'
+          description: ''
+    patch:
+      operationId: hobby_partial_update
+      description: 'The URI may contain an optional parameter {id} at the end. Behaviour
+        of the actions: POST has no {id} -> `create`; GET has no {id} -> `list`; GET
+        has {id} -> `retrieve`; DELETE, PUT, PATCH must have {id} paratemeter.'
+      tags:
+      - hobby
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedHobby'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedHobby'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedHobby'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Hobby'
+          description: ''
+    delete:
+      operationId: hobby_destroy
+      description: 'The URI may contain an optional parameter {id} at the end. Behaviour
+        of the actions: POST has no {id} -> `create`; GET has no {id} -> `list`; GET
+        has {id} -> `retrieve`; DELETE, PUT, PATCH must have {id} paratemeter.'
+      tags:
+      - hobby
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: No response body
+  /cv/api/language/:
+    get:
+      operationId: language_list
+      description: 'The URI may contain an optional parameter {id} at the end. Behaviour
+        of the actions: POST has no {id} -> `create`; GET has no {id} -> `list`; GET
+        has {id} -> `retrieve`; DELETE, PUT, PATCH must have {id} paratemeter.'
+      tags:
+      - language
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Language'
+          description: ''
+    post:
+      operationId: language_create
+      description: 'The URI may contain an optional parameter {id} at the end. Behaviour
+        of the actions: POST has no {id} -> `create`; GET has no {id} -> `list`; GET
+        has {id} -> `retrieve`; DELETE, PUT, PATCH must have {id} paratemeter.'
+      tags:
+      - language
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Language'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Language'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Language'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Language'
+          description: ''
+    put:
+      operationId: language_update
+      description: 'The URI may contain an optional parameter {id} at the end. Behaviour
+        of the actions: POST has no {id} -> `create`; GET has no {id} -> `list`; GET
+        has {id} -> `retrieve`; DELETE, PUT, PATCH must have {id} paratemeter.'
+      tags:
+      - language
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Language'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Language'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Language'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Language'
+          description: ''
+    patch:
+      operationId: language_partial_update
+      description: 'The URI may contain an optional parameter {id} at the end. Behaviour
+        of the actions: POST has no {id} -> `create`; GET has no {id} -> `list`; GET
+        has {id} -> `retrieve`; DELETE, PUT, PATCH must have {id} paratemeter.'
+      tags:
+      - language
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedLanguage'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedLanguage'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedLanguage'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Language'
+          description: ''
+    delete:
+      operationId: language_destroy
+      description: 'The URI may contain an optional parameter {id} at the end. Behaviour
+        of the actions: POST has no {id} -> `create`; GET has no {id} -> `list`; GET
+        has {id} -> `retrieve`; DELETE, PUT, PATCH must have {id} paratemeter.'
+      tags:
+      - language
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: No response body
+  /cv/api/profile/:
+    get:
+      operationId: profile_list
+      description: |-
+        We must take decision on self.args or self.kwargs, Is 'GET' request either list or retrieve?
+        It should be coupled with urls definition like
+        re_path('^education/(?:(?P<pk>[0-9]+)/)?$', Education.as_view(), name='education')
+        where `pk` is optional part
+      tags:
+      - profile
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Profile'
+          description: ''
+    post:
+      operationId: profile_create
+      description: |-
+        Implements base behaviour for List, Create, Retrieve, Update, Partial-Update, Delete.
+        It should be coupled with URLs definition like
+        re_path('^education/(?:(?P<pk>[0-9]+)/)?$', Education.as_view(), name='education') where `pk` is optional part.
+        It will respond to the URLs "education/1222/" or "education/".
+      tags:
+      - profile
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Profile'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Profile'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Profile'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Profile'
+          description: ''
+    put:
+      operationId: profile_update
+      description: |-
+        Implements base behaviour for List, Create, Retrieve, Update, Partial-Update, Delete.
+        It should be coupled with URLs definition like
+        re_path('^education/(?:(?P<pk>[0-9]+)/)?$', Education.as_view(), name='education') where `pk` is optional part.
+        It will respond to the URLs "education/1222/" or "education/".
+      tags:
+      - profile
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Profile'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Profile'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Profile'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Profile'
+          description: ''
+    patch:
+      operationId: profile_partial_update
+      description: |-
+        Implements base behaviour for List, Create, Retrieve, Update, Partial-Update, Delete.
+        It should be coupled with URLs definition like
+        re_path('^education/(?:(?P<pk>[0-9]+)/)?$', Education.as_view(), name='education') where `pk` is optional part.
+        It will respond to the URLs "education/1222/" or "education/".
+      tags:
+      - profile
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedProfile'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedProfile'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedProfile'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Profile'
+          description: ''
+    delete:
+      operationId: profile_destroy
+      description: |-
+        Implements base behaviour for List, Create, Retrieve, Update, Partial-Update, Delete.
+        It should be coupled with URLs definition like
+        re_path('^education/(?:(?P<pk>[0-9]+)/)?$', Education.as_view(), name='education') where `pk` is optional part.
+        It will respond to the URLs "education/1222/" or "education/".
+      tags:
+      - profile
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: No response body
+  /cv/api/profile/photo/:
+    put:
+      operationId: profile_photo_update
+      description: |-
+        It allows update only `photo` field and return representation like a regular
+        serializers.ProfileSerializer
+
+        1. serializers.ProfileSerializer used as read-only
+        2. serializer = self.get_serializer(instance)
+      tags:
+      - profile
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProfilePhoto'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfilePhoto'
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/ProfilePhoto'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfilePhoto'
+          description: ''
+    patch:
+      operationId: profile_photo_partial_update
+      description: |-
+        It allows update only `photo` field and return representation like a regular
+        serializers.ProfileSerializer
+
+        1. serializers.ProfileSerializer used as read-only
+        2. serializer = self.get_serializer(instance)
+      tags:
+      - profile
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedProfilePhoto'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedProfilePhoto'
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/PatchedProfilePhoto'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfilePhoto'
+          description: ''
+  /cv/api/project/:
+    get:
+      operationId: project_list
+      description: 'The URI may contain an optional parameter {id} at the end. Behaviour
+        of the actions: POST has no {id} -> `create`; GET has no {id} -> `list`; GET
+        has {id} -> `retrieve`; DELETE, PUT, PATCH must have {id} paratemeter.'
+      tags:
+      - project
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Project'
+          description: ''
+    post:
+      operationId: project_create
+      description: 'The URI may contain an optional parameter {id} at the end. Behaviour
+        of the actions: POST has no {id} -> `create`; GET has no {id} -> `list`; GET
+        has {id} -> `retrieve`; DELETE, PUT, PATCH must have {id} paratemeter.'
+      tags:
+      - project
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Project'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Project'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Project'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+          description: ''
+    put:
+      operationId: project_update
+      description: 'The URI may contain an optional parameter {id} at the end. Behaviour
+        of the actions: POST has no {id} -> `create`; GET has no {id} -> `list`; GET
+        has {id} -> `retrieve`; DELETE, PUT, PATCH must have {id} paratemeter.'
+      tags:
+      - project
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Project'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Project'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Project'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+          description: ''
+    patch:
+      operationId: project_partial_update
+      description: 'The URI may contain an optional parameter {id} at the end. Behaviour
+        of the actions: POST has no {id} -> `create`; GET has no {id} -> `list`; GET
+        has {id} -> `retrieve`; DELETE, PUT, PATCH must have {id} paratemeter.'
+      tags:
+      - project
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedProject'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedProject'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedProject'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+          description: ''
+    delete:
+      operationId: project_destroy
+      description: 'The URI may contain an optional parameter {id} at the end. Behaviour
+        of the actions: POST has no {id} -> `create`; GET has no {id} -> `list`; GET
+        has {id} -> `retrieve`; DELETE, PUT, PATCH must have {id} paratemeter.'
+      tags:
+      - project
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: No response body
+  /cv/api/project-technology/:
+    get:
+      operationId: project_technology_list
+      description: 'The URI may contain an optional parameter {id} at the end. Behaviour
+        of the actions: POST has no {id} -> `create`; GET has no {id} -> `list`; GET
+        has {id} -> `retrieve`; DELETE, PUT, PATCH must have {id} paratemeter.'
+      tags:
+      - project-technology
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProjectTechnology'
+          description: ''
+    post:
+      operationId: project_technology_create
+      description: 'The URI may contain an optional parameter {id} at the end. Behaviour
+        of the actions: POST has no {id} -> `create`; GET has no {id} -> `list`; GET
+        has {id} -> `retrieve`; DELETE, PUT, PATCH must have {id} paratemeter.'
+      tags:
+      - project-technology
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectTechnology'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProjectTechnology'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProjectTechnology'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectTechnology'
+          description: ''
+    put:
+      operationId: project_technology_update
+      description: 'The URI may contain an optional parameter {id} at the end. Behaviour
+        of the actions: POST has no {id} -> `create`; GET has no {id} -> `list`; GET
+        has {id} -> `retrieve`; DELETE, PUT, PATCH must have {id} paratemeter.'
+      tags:
+      - project-technology
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectTechnology'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProjectTechnology'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProjectTechnology'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectTechnology'
+          description: ''
+    patch:
+      operationId: project_technology_partial_update
+      description: 'The URI may contain an optional parameter {id} at the end. Behaviour
+        of the actions: POST has no {id} -> `create`; GET has no {id} -> `list`; GET
+        has {id} -> `retrieve`; DELETE, PUT, PATCH must have {id} paratemeter.'
+      tags:
+      - project-technology
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedProjectTechnology'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedProjectTechnology'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedProjectTechnology'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectTechnology'
+          description: ''
+    delete:
+      operationId: project_technology_destroy
+      description: 'The URI may contain an optional parameter {id} at the end. Behaviour
+        of the actions: POST has no {id} -> `create`; GET has no {id} -> `list`; GET
+        has {id} -> `retrieve`; DELETE, PUT, PATCH must have {id} paratemeter.'
+      tags:
+      - project-technology
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: No response body
+  /cv/api/resource/:
+    get:
+      operationId: resource_list
+      tags:
+      - resource
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Resources'
+          description: ''
+    post:
+      operationId: resource_create
+      tags:
+      - resource
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Resources'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Resources'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Resources'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Resources'
+          description: ''
+  /cv/api/resource/{id}/:
+    get:
+      operationId: resource_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - resource
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Resources'
+          description: ''
+    put:
+      operationId: resource_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - resource
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Resources'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Resources'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Resources'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Resources'
+          description: ''
+    patch:
+      operationId: resource_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - resource
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedResources'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedResources'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedResources'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Resources'
+          description: ''
+    delete:
+      operationId: resource_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - resource
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: No response body
+  /cv/api/technology/:
+    get:
+      operationId: technology_list
+      tags:
+      - technology
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Technologies'
+          description: ''
+    post:
+      operationId: technology_create
+      tags:
+      - technology
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Technologies'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Technologies'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Technologies'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Technologies'
+          description: ''
+  /cv/api/technology/{id}/:
+    get:
+      operationId: technology_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - technology
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Technologies'
+          description: ''
+    put:
+      operationId: technology_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - technology
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Technologies'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Technologies'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Technologies'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Technologies'
+          description: ''
+    patch:
+      operationId: technology_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - technology
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedTechnologies'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedTechnologies'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedTechnologies'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Technologies'
+          description: ''
+    delete:
+      operationId: technology_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - technology
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: No response body
+  /cv/api/user/:
+    get:
+      operationId: user_retrieve
+      tags:
+      - user
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRetrieveUpdate'
+          description: ''
+    put:
+      operationId: user_update
+      tags:
+      - user
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRetrieveUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserRetrieveUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserRetrieveUpdate'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRetrieveUpdate'
+          description: ''
+    patch:
+      operationId: user_partial_update
+      tags:
+      - user
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUserRetrieveUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUserRetrieveUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUserRetrieveUpdate'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRetrieveUpdate'
+          description: ''
+  /cv/api/user-resource/:
+    get:
+      operationId: user_resource_list
+      description: 'The URI may contain an optional parameter {id} at the end. Behaviour
+        of the actions: POST has no {id} -> `create`; GET has no {id} -> `list`; GET
+        has {id} -> `retrieve`; DELETE, PUT, PATCH must have {id} paratemeter.'
+      tags:
+      - user-resource
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserResource'
+          description: ''
+    post:
+      operationId: user_resource_create
+      description: 'The URI may contain an optional parameter {id} at the end. Behaviour
+        of the actions: POST has no {id} -> `create`; GET has no {id} -> `list`; GET
+        has {id} -> `retrieve`; DELETE, PUT, PATCH must have {id} paratemeter.'
+      tags:
+      - user-resource
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserResource'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserResource'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserResource'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResource'
+          description: ''
+    put:
+      operationId: user_resource_update
+      description: 'The URI may contain an optional parameter {id} at the end. Behaviour
+        of the actions: POST has no {id} -> `create`; GET has no {id} -> `list`; GET
+        has {id} -> `retrieve`; DELETE, PUT, PATCH must have {id} paratemeter.'
+      tags:
+      - user-resource
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserResource'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserResource'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserResource'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResource'
+          description: ''
+    patch:
+      operationId: user_resource_partial_update
+      description: 'The URI may contain an optional parameter {id} at the end. Behaviour
+        of the actions: POST has no {id} -> `create`; GET has no {id} -> `list`; GET
+        has {id} -> `retrieve`; DELETE, PUT, PATCH must have {id} paratemeter.'
+      tags:
+      - user-resource
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUserResource'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUserResource'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUserResource'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResource'
+          description: ''
+    delete:
+      operationId: user_resource_destroy
+      description: 'The URI may contain an optional parameter {id} at the end. Behaviour
+        of the actions: POST has no {id} -> `create`; GET has no {id} -> `list`; GET
+        has {id} -> `retrieve`; DELETE, PUT, PATCH must have {id} paratemeter.'
+      tags:
+      - user-resource
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: No response body
+  /cv/api/workplace/:
+    get:
+      operationId: workplace_list
+      description: 'The URI may contain an optional parameter {id} at the end. Behaviour
+        of the actions: POST has no {id} -> `create`; GET has no {id} -> `list`; GET
+        has {id} -> `retrieve`; DELETE, PUT, PATCH must have {id} paratemeter.'
+      tags:
+      - workplace
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Workplace'
+          description: ''
+    post:
+      operationId: workplace_create
+      description: 'The URI may contain an optional parameter {id} at the end. Behaviour
+        of the actions: POST has no {id} -> `create`; GET has no {id} -> `list`; GET
+        has {id} -> `retrieve`; DELETE, PUT, PATCH must have {id} paratemeter.'
+      tags:
+      - workplace
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Workplace'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Workplace'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Workplace'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workplace'
+          description: ''
+    put:
+      operationId: workplace_update
+      description: 'The URI may contain an optional parameter {id} at the end. Behaviour
+        of the actions: POST has no {id} -> `create`; GET has no {id} -> `list`; GET
+        has {id} -> `retrieve`; DELETE, PUT, PATCH must have {id} paratemeter.'
+      tags:
+      - workplace
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Workplace'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Workplace'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Workplace'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workplace'
+          description: ''
+    patch:
+      operationId: workplace_partial_update
+      description: 'The URI may contain an optional parameter {id} at the end. Behaviour
+        of the actions: POST has no {id} -> `create`; GET has no {id} -> `list`; GET
+        has {id} -> `retrieve`; DELETE, PUT, PATCH must have {id} paratemeter.'
+      tags:
+      - workplace
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedWorkplace'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedWorkplace'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedWorkplace'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workplace'
+          description: ''
+    delete:
+      operationId: workplace_destroy
+      description: 'The URI may contain an optional parameter {id} at the end. Behaviour
+        of the actions: POST has no {id} -> `create`; GET has no {id} -> `list`; GET
+        has {id} -> `retrieve`; DELETE, PUT, PATCH must have {id} paratemeter.'
+      tags:
+      - workplace
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: No response body
+  /cv/api/workplace-project/:
+    get:
+      operationId: workplace_project_list
+      description: 'The URI may contain an optional parameter {id} at the end. Behaviour
+        of the actions: POST has no {id} -> `create`; GET has no {id} -> `list`; GET
+        has {id} -> `retrieve`; DELETE, PUT, PATCH must have {id} paratemeter.'
+      tags:
+      - workplace-project
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WorkplaceProject'
+          description: ''
+    post:
+      operationId: workplace_project_create
+      description: 'The URI may contain an optional parameter {id} at the end. Behaviour
+        of the actions: POST has no {id} -> `create`; GET has no {id} -> `list`; GET
+        has {id} -> `retrieve`; DELETE, PUT, PATCH must have {id} paratemeter.'
+      tags:
+      - workplace-project
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkplaceProject'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/WorkplaceProject'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/WorkplaceProject'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkplaceProject'
+          description: ''
+    put:
+      operationId: workplace_project_update
+      description: 'The URI may contain an optional parameter {id} at the end. Behaviour
+        of the actions: POST has no {id} -> `create`; GET has no {id} -> `list`; GET
+        has {id} -> `retrieve`; DELETE, PUT, PATCH must have {id} paratemeter.'
+      tags:
+      - workplace-project
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkplaceProject'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/WorkplaceProject'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/WorkplaceProject'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkplaceProject'
+          description: ''
+    patch:
+      operationId: workplace_project_partial_update
+      description: 'The URI may contain an optional parameter {id} at the end. Behaviour
+        of the actions: POST has no {id} -> `create`; GET has no {id} -> `list`; GET
+        has {id} -> `retrieve`; DELETE, PUT, PATCH must have {id} paratemeter.'
+      tags:
+      - workplace-project
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedWorkplaceProject'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedWorkplaceProject'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedWorkplaceProject'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkplaceProject'
+          description: ''
+    delete:
+      operationId: workplace_project_destroy
+      description: 'The URI may contain an optional parameter {id} at the end. Behaviour
+        of the actions: POST has no {id} -> `create`; GET has no {id} -> `list`; GET
+        has {id} -> `retrieve`; DELETE, PUT, PATCH must have {id} paratemeter.'
+      tags:
+      - workplace-project
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: No response body
+  /cv/api/workplace-responsibility/:
+    get:
+      operationId: workplace_responsibility_list
+      description: 'The URI may contain an optional parameter {id} at the end. Behaviour
+        of the actions: POST has no {id} -> `create`; GET has no {id} -> `list`; GET
+        has {id} -> `retrieve`; DELETE, PUT, PATCH must have {id} paratemeter.'
+      tags:
+      - workplace-responsibility
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WorkplaceResponsibility'
+          description: ''
+    post:
+      operationId: workplace_responsibility_create
+      description: 'The URI may contain an optional parameter {id} at the end. Behaviour
+        of the actions: POST has no {id} -> `create`; GET has no {id} -> `list`; GET
+        has {id} -> `retrieve`; DELETE, PUT, PATCH must have {id} paratemeter.'
+      tags:
+      - workplace-responsibility
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkplaceResponsibility'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/WorkplaceResponsibility'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/WorkplaceResponsibility'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkplaceResponsibility'
+          description: ''
+    put:
+      operationId: workplace_responsibility_update
+      description: 'The URI may contain an optional parameter {id} at the end. Behaviour
+        of the actions: POST has no {id} -> `create`; GET has no {id} -> `list`; GET
+        has {id} -> `retrieve`; DELETE, PUT, PATCH must have {id} paratemeter.'
+      tags:
+      - workplace-responsibility
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkplaceResponsibility'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/WorkplaceResponsibility'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/WorkplaceResponsibility'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkplaceResponsibility'
+          description: ''
+    patch:
+      operationId: workplace_responsibility_partial_update
+      description: 'The URI may contain an optional parameter {id} at the end. Behaviour
+        of the actions: POST has no {id} -> `create`; GET has no {id} -> `list`; GET
+        has {id} -> `retrieve`; DELETE, PUT, PATCH must have {id} paratemeter.'
+      tags:
+      - workplace-responsibility
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedWorkplaceResponsibility'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedWorkplaceResponsibility'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedWorkplaceResponsibility'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkplaceResponsibility'
+          description: ''
+    delete:
+      operationId: workplace_responsibility_destroy
+      description: 'The URI may contain an optional parameter {id} at the end. Behaviour
+        of the actions: POST has no {id} -> `create`; GET has no {id} -> `list`; GET
+        has {id} -> `retrieve`; DELETE, PUT, PATCH must have {id} paratemeter.'
+      tags:
+      - workplace-responsibility
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: No response body
+components:
+  schemas:
+    Education:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        profile:
+          type: string
+          description: A link to the profile associated with the object. Profile of
+            the current (logged in) user.
+          readOnly: true
+        begin:
+          type: string
+          format: date
+        end:
+          type: string
+          format: date
+          nullable: true
+        institution:
+          type: string
+          maxLength: 248
+        speciality:
+          type: string
+          maxLength: 248
+        degree:
+          type: string
+          maxLength: 24
+        complete:
+          type: boolean
+        allow_date_crossing:
+          type: boolean
+      required:
+      - degree
+      - id
+      - institution
+      - profile
+      - speciality
+    Hobby:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        profile:
+          type: string
+          description: A link to the profile associated with the object. Profile of
+            the current (logged in) user.
+          readOnly: true
+        description:
+          type: string
+          nullable: true
+      required:
+      - id
+      - profile
+    Language:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        profile:
+          type: string
+          description: A link to the profile associated with the object. Profile of
+            the current (logged in) user.
+          readOnly: true
+        lang:
+          type: string
+          maxLength: 24
+        level:
+          type: string
+          maxLength: 24
+        notes:
+          type: string
+          nullable: true
+          maxLength: 248
+      required:
+      - id
+      - lang
+      - level
+      - profile
+    PatchedEducation:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        profile:
+          type: string
+          description: A link to the profile associated with the object. Profile of
+            the current (logged in) user.
+          readOnly: true
+        begin:
+          type: string
+          format: date
+        end:
+          type: string
+          format: date
+          nullable: true
+        institution:
+          type: string
+          maxLength: 248
+        speciality:
+          type: string
+          maxLength: 248
+        degree:
+          type: string
+          maxLength: 24
+        complete:
+          type: boolean
+        allow_date_crossing:
+          type: boolean
+    PatchedHobby:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        profile:
+          type: string
+          description: A link to the profile associated with the object. Profile of
+            the current (logged in) user.
+          readOnly: true
+        description:
+          type: string
+          nullable: true
+    PatchedLanguage:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        profile:
+          type: string
+          description: A link to the profile associated with the object. Profile of
+            the current (logged in) user.
+          readOnly: true
+        lang:
+          type: string
+          maxLength: 24
+        level:
+          type: string
+          maxLength: 24
+        notes:
+          type: string
+          nullable: true
+          maxLength: 248
+    PatchedProfile:
+      type: object
+      description: |-
+        It supports create, update, retrieve actions without 'photo' field as JSON
+        If you need (want) upload 'photo' also in one request then should be used
+        'multipart/form-data; boundary=SoMeBoUnDaRyStRiNg'.
+        Other, file uploading cases are supported by ProfilePhotoSerializer
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          allOf:
+          - $ref: '#/components/schemas/UserRetrieveUpdate'
+          readOnly: true
+        birthday:
+          type: string
+          format: date
+          nullable: true
+        photo:
+          type: string
+          format: uri
+          nullable: true
+        soft_skill:
+          type: string
+          nullable: true
+          maxLength: 1024
+        summary_qualification:
+          type: string
+          nullable: true
+          maxLength: 2048
+        position:
+          type: string
+          nullable: true
+          maxLength: 248
+        cover_letter:
+          type: string
+          nullable: true
+          maxLength: 8192
+    PatchedProfilePhoto:
+      type: object
+      description: |-
+        Like a ProfileSerializer with next differences:
+            Doesn't allow create profile
+            Doesn't allow modify any fields exclude `photo`
+            It supports MultiPartParser, FileUploadParser, JSONParser (in this order)
+            content of `photo` must be base64 encoded for JSONParser
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          allOf:
+          - $ref: '#/components/schemas/UserRetrieveUpdate'
+          readOnly: true
+        birthday:
+          type: string
+          format: date
+          nullable: true
+        photo:
+          type: string
+          format: uri
+          nullable: true
+        soft_skill:
+          type: string
+          nullable: true
+          maxLength: 1024
+        summary_qualification:
+          type: string
+          nullable: true
+          maxLength: 2048
+        position:
+          type: string
+          nullable: true
+          maxLength: 248
+        cover_letter:
+          type: string
+          nullable: true
+          maxLength: 8192
+    PatchedProject:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        profile:
+          type: string
+          description: A link to the profile associated with the object. Profile of
+            the current (logged in) user.
+          readOnly: true
+        title:
+          type: string
+          maxLength: 248
+        prerequisite:
+          type: string
+          maxLength: 248
+        description:
+          type: string
+          maxLength: 8192
+        result:
+          type: string
+          maxLength: 248
+        begin:
+          type: string
+          format: date
+        end:
+          type: string
+          format: date
+          nullable: true
+        allow_date_crossing:
+          type: boolean
+    PatchedProjectTechnology:
+      type: object
+      description: |-
+        CVProjectTechnology
+            id
+            project = models.ForeignKey(CVProject, on_delete=models.CASCADE)
+                { id, profile -> url, title, description, prerequisite, result, begin, end }
+            technology = models.ForeignKey(CVTechnologies, on_delete=models.CASCADE)
+                { id, technology }
+            duration = models.DurationField(null=True, blank=True)
+            notes = models.CharField(max_length=248)
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        duration:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+          maxLength: 248
+        project:
+          type: integer
+        technology:
+          type: integer
+    PatchedResources:
+      type: object
+      description: Support access readonly-for_all or write-staff_user
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        resource:
+          type: string
+          maxLength: 24
+    PatchedTechnologies:
+      type: object
+      description: |-
+        Support access that has some different behaviour for logged user:
+        Read:
+            Logged (current) User can see either own or common (.profile is null) rows
+            Any Users can read any rows where .profile is null
+
+        Create/Update:
+            if User is staff then models.CVTechnologies.profile will contain Null
+            otherwise will contain profile of logged (current) user
+
+        Delete:
+            The plain User can delete the technologies that created by him.
+            The staff User can delete any technologies
+
+        readonly-for_all or write-staff_user
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        technology:
+          type: string
+          maxLength: 48
+        technology_type:
+          $ref: '#/components/schemas/TechnologyTypeEnum'
+        profile:
+          type: integer
+          nullable: true
+    PatchedUserResource:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        profile:
+          type: string
+          description: A link to the profile associated with the object. Profile of
+            the current (logged in) user.
+          readOnly: true
+        link:
+          type: string
+          maxLength: 248
+        resource:
+          type: integer
+    PatchedUserRetrieveUpdate:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          readOnly: true
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+        email:
+          type: string
+          format: email
+          readOnly: true
+          title: Email address
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        date_joined:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedWorkplace:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        profile:
+          type: string
+          description: A link to the profile associated with the object. Profile of
+            the current (logged in) user.
+          readOnly: true
+        workplace:
+          type: string
+          maxLength: 248
+        begin:
+          type: string
+          format: date
+        end:
+          type: string
+          format: date
+          nullable: true
+        allow_date_crossing:
+          type: boolean
+    PatchedWorkplaceProject:
+      type: object
+      description: |-
+        CVWorkplaceProject
+            workplace = models.ForeignKey(CVWorkplace, on_delete=models.CASCADE)
+                {id: <int>, workplace: <str:248>, begin: <datetime.date>, end: <datetime.date>, url: <str>}
+            project = models.ForeignKey(CVProject, on_delete=models.CASCADE)
+                {id: <int>, description: <str:248>, begin: <datetime.date>, end: <datetime.date>, url: <str>}
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        workplace:
+          type: integer
+        project:
+          type: integer
+    PatchedWorkplaceResponsibility:
+      type: object
+      description: |-
+        CVWorkplaceResponsibility
+            workplace = models.ForeignKey(CVWorkplace, on_delete=models.CASCADE)
+                {id: <int>, workplace = <str:248>, url: <str>}
+            responsibility = models.TextField()
+            role = models.CharField(max_length=48)
+            begin = models.DateField(default=datetime.date.today)
+            end = models.DateField(null=True, default=None, blank=True)
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        responsibility:
+          type: string
+          maxLength: 1024
+        role:
+          type: string
+          maxLength: 248
+        begin:
+          type: string
+          format: date
+        end:
+          type: string
+          format: date
+          nullable: true
+        workplace:
+          type: integer
+    Profile:
+      type: object
+      description: |-
+        It supports create, update, retrieve actions without 'photo' field as JSON
+        If you need (want) upload 'photo' also in one request then should be used
+        'multipart/form-data; boundary=SoMeBoUnDaRyStRiNg'.
+        Other, file uploading cases are supported by ProfilePhotoSerializer
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          allOf:
+          - $ref: '#/components/schemas/UserRetrieveUpdate'
+          readOnly: true
+        birthday:
+          type: string
+          format: date
+          nullable: true
+        photo:
+          type: string
+          format: uri
+          nullable: true
+        soft_skill:
+          type: string
+          nullable: true
+          maxLength: 1024
+        summary_qualification:
+          type: string
+          nullable: true
+          maxLength: 2048
+        position:
+          type: string
+          nullable: true
+          maxLength: 248
+        cover_letter:
+          type: string
+          nullable: true
+          maxLength: 8192
+      required:
+      - id
+      - user
+    ProfilePhoto:
+      type: object
+      description: |-
+        Like a ProfileSerializer with next differences:
+            Doesn't allow create profile
+            Doesn't allow modify any fields exclude `photo`
+            It supports MultiPartParser, FileUploadParser, JSONParser (in this order)
+            content of `photo` must be base64 encoded for JSONParser
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          allOf:
+          - $ref: '#/components/schemas/UserRetrieveUpdate'
+          readOnly: true
+        birthday:
+          type: string
+          format: date
+          nullable: true
+        photo:
+          type: string
+          format: uri
+          nullable: true
+        soft_skill:
+          type: string
+          nullable: true
+          maxLength: 1024
+        summary_qualification:
+          type: string
+          nullable: true
+          maxLength: 2048
+        position:
+          type: string
+          nullable: true
+          maxLength: 248
+        cover_letter:
+          type: string
+          nullable: true
+          maxLength: 8192
+      required:
+      - id
+      - user
+    Project:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        profile:
+          type: string
+          description: A link to the profile associated with the object. Profile of
+            the current (logged in) user.
+          readOnly: true
+        title:
+          type: string
+          maxLength: 248
+        prerequisite:
+          type: string
+          maxLength: 248
+        description:
+          type: string
+          maxLength: 8192
+        result:
+          type: string
+          maxLength: 248
+        begin:
+          type: string
+          format: date
+        end:
+          type: string
+          format: date
+          nullable: true
+        allow_date_crossing:
+          type: boolean
+      required:
+      - description
+      - id
+      - profile
+      - title
+    ProjectTechnology:
+      type: object
+      description: |-
+        CVProjectTechnology
+            id
+            project = models.ForeignKey(CVProject, on_delete=models.CASCADE)
+                { id, profile -> url, title, description, prerequisite, result, begin, end }
+            technology = models.ForeignKey(CVTechnologies, on_delete=models.CASCADE)
+                { id, technology }
+            duration = models.DurationField(null=True, blank=True)
+            notes = models.CharField(max_length=248)
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        duration:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+          maxLength: 248
+        project:
+          type: integer
+        technology:
+          type: integer
+      required:
+      - id
+      - project
+      - technology
+    Resources:
+      type: object
+      description: Support access readonly-for_all or write-staff_user
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        resource:
+          type: string
+          maxLength: 24
+      required:
+      - id
+      - resource
+    Technologies:
+      type: object
+      description: |-
+        Support access that has some different behaviour for logged user:
+        Read:
+            Logged (current) User can see either own or common (.profile is null) rows
+            Any Users can read any rows where .profile is null
+
+        Create/Update:
+            if User is staff then models.CVTechnologies.profile will contain Null
+            otherwise will contain profile of logged (current) user
+
+        Delete:
+            The plain User can delete the technologies that created by him.
+            The staff User can delete any technologies
+
+        readonly-for_all or write-staff_user
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        technology:
+          type: string
+          maxLength: 48
+        technology_type:
+          $ref: '#/components/schemas/TechnologyTypeEnum'
+        profile:
+          type: integer
+          nullable: true
+      required:
+      - id
+      - technology
+    TechnologyTypeEnum:
+      enum:
+      - PROG_LANG
+      - FWRK_LIB
+      - FORMAT
+      - DB
+      - OS
+      - DEV_TOOL
+      - PROTOCOL
+      - OTHER
+      type: string
+      description: |-
+        * `PROG_LANG` - Programming language
+        * `FWRK_LIB` - Framework/Library
+        * `FORMAT` - Format
+        * `DB` - Database
+        * `OS` - Operating System
+        * `DEV_TOOL` - Development tool
+        * `PROTOCOL` - Protocol
+        * `OTHER` - Other
+    UserResource:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        profile:
+          type: string
+          description: A link to the profile associated with the object. Profile of
+            the current (logged in) user.
+          readOnly: true
+        link:
+          type: string
+          maxLength: 248
+        resource:
+          type: integer
+      required:
+      - id
+      - link
+      - profile
+      - resource
+    UserRetrieveUpdate:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          readOnly: true
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+        email:
+          type: string
+          format: email
+          readOnly: true
+          title: Email address
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        date_joined:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - date_joined
+      - email
+      - id
+      - username
+    Workplace:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        profile:
+          type: string
+          description: A link to the profile associated with the object. Profile of
+            the current (logged in) user.
+          readOnly: true
+        workplace:
+          type: string
+          maxLength: 248
+        begin:
+          type: string
+          format: date
+        end:
+          type: string
+          format: date
+          nullable: true
+        allow_date_crossing:
+          type: boolean
+      required:
+      - id
+      - profile
+      - workplace
+    WorkplaceProject:
+      type: object
+      description: |-
+        CVWorkplaceProject
+            workplace = models.ForeignKey(CVWorkplace, on_delete=models.CASCADE)
+                {id: <int>, workplace: <str:248>, begin: <datetime.date>, end: <datetime.date>, url: <str>}
+            project = models.ForeignKey(CVProject, on_delete=models.CASCADE)
+                {id: <int>, description: <str:248>, begin: <datetime.date>, end: <datetime.date>, url: <str>}
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        workplace:
+          type: integer
+        project:
+          type: integer
+      required:
+      - id
+      - project
+      - workplace
+    WorkplaceResponsibility:
+      type: object
+      description: |-
+        CVWorkplaceResponsibility
+            workplace = models.ForeignKey(CVWorkplace, on_delete=models.CASCADE)
+                {id: <int>, workplace = <str:248>, url: <str>}
+            responsibility = models.TextField()
+            role = models.CharField(max_length=48)
+            begin = models.DateField(default=datetime.date.today)
+            end = models.DateField(null=True, default=None, blank=True)
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        responsibility:
+          type: string
+          maxLength: 1024
+        role:
+          type: string
+          maxLength: 248
+        begin:
+          type: string
+          format: date
+        end:
+          type: string
+          format: date
+          nullable: true
+        workplace:
+          type: integer
+      required:
+      - id
+      - responsibility
+      - role
+      - workplace
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid

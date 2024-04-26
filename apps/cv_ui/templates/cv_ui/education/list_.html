@@ -1,0 +1,52 @@
+{% extends 'cv_ui/index.html' %}
+{% load static %}
+
+{% block title %}Education{% endblock title %}
+
+{% block meta %}
+{{ block.super }}
+<link rel="stylesheet" type="text/css" href="{% static "cv_ui/css/table_collapsed_columns.css" %}">
+{% endblock %}
+
+{% block content %}
+    <h3>Educations</h3>
+    <a href="{% url 'cv_ui:education-create'%}" class="btn btn-primary">Create</a>
+    <table class="table-responsive-sm">
+    <thead>
+        <tr>
+            <th scope="col">#</th>
+    {#        <td scope="col">Profile</td>#}
+            <th scope="col">Begin</th>
+            <th scope="col">End</th>
+            <th scope="col">Institution</th>
+            <th scope="col">Speciality</th>
+            <th scope="col">Degree</th>
+            <th scope="col">Complete</th>
+            <th scope="col">Allow date crossing</th>
+            <th scope="col">&nbsp;</th>
+        </tr>
+    </thead>
+    {% for itm in data %}
+    <tr>
+        <td scope="row" data-label="#">{{ itm.id }}</td>
+{#        <td>{{ itm.profile }}</td>#}
+        <td data-label="Begin">{{ itm.begin }}</td>
+        <td data-label="End">{{ itm.end }}</td>
+        <td data-label="Institution">{{ itm.institution }}</td>
+        <td data-label="Speciality">{{ itm.speciality }}</td>
+        <td data-label="Degree">{{ itm.degree }}</td>
+        <td data-label="Complete">{{ itm.complete }}</td>
+        <td data-label="Allow date crossing">{{ itm.allow_date_crossing }}</td>
+        <td>
+            <a href="{% url 'cv_ui:education-retrieve' pk=itm.id %}" class="btn btn-primary">Detail</a>
+            <a href="{% url 'cv_ui:education-update' pk=itm.id %}" class="btn btn-warning">Update</a>
+            <a href="{% url 'cv_ui:education-delete' pk=itm.id %}" class="btn btn-danger">Delete</a>
+        </td>
+    </tr>
+    {% empty %}
+    <tr>
+        <td>No content</td>
+    </tr>
+    {% endfor %}
+    </table>
+{% endblock content %}

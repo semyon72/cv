@@ -1,0 +1,15 @@
+{% extends 'cv_ui/index.html' %}
+{% load rest_framework %}
+
+
+{% block title %}Hobby{% endblock title %}
+    {% block content %}
+    <h3>Hobby</h3>
+    <form method="post" action="">
+    {% csrf_token %}
+    {% render_form data.serializer %}
+    <button type="submit" class="btn btn-primary">Update</button>
+    <button type="reset" class="btn btn-primary">Reset</button>
+    <a href="{% url 'cv_ui:hobby-list' %}" class="btn btn-primary">List</a>
+    </form>
+{% endblock content %}

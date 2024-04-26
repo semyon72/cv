@@ -141,7 +141,10 @@ class CVBaseSerializer(serializers.ModelSerializer):
         if not hasattr(instance, 'profile'):
             raise AssertionError(self.assertion_messages['profile_required'])
 
-    def get_profile(self, obj):
+    def get_profile(self, obj) -> str:
+        """
+            A link to the profile associated with the object. Profile of the current (logged in) user.
+        """
         return reverse(self.view_name, request=self.context.get('request'))
 
     def check_owning(self, instance):

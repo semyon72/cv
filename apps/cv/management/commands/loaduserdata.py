@@ -31,7 +31,7 @@ from django.urls import reverse
 from rest_framework.fields import DurationField
 
 from apps.cv import models
-from apps.cv.compare import DataComparer, CompleteDataComparer
+from apps.cv.compare import DataComparer, CompleteDataComparer, DateRangeCrossing, DateRangeMatcher
 
 
 class LiveServer(LiveServerThread):
@@ -120,6 +120,14 @@ class CVLoader:
 
             self.report_if_response_is_not_ok(response, report_msg_prefix)
 
+    @staticmethod
+    def _check_and_minimize_crossing(load_data):
+        drc = DateRangeCrossing((item['begin'], item['end']) for item in load_data)
+        uncross, cross = drc.min_crossings()
+        # ???? probably need to remove allow_date_crossing for those who in uncross but has True in load_data
+        for drange in cross:
+            load_data[drc.date_ranges.index(drange)]['allow_date_crossing'] = True
+
     def load_profile(self, load_data):
         msg_prefix = 'The Profile'
 
@@ -159,6 +167,7 @@ class CVLoader:
         self.report_if_response_is_not_ok(act_response, msg_prefix)
 
     def load_education(self, load_data):
+        self._check_and_minimize_crossing(load_data)
         self._load_independent_part(load_data, 'The Education', "cv:education")
 
     def load_hobby(self, load_data):
@@ -168,9 +177,11 @@ class CVLoader:
         self._load_independent_part(load_data, 'The Language', "cv:language")
 
     def load_workplace(self, load_data):
+        self._check_and_minimize_crossing(load_data)
         self._load_independent_part(load_data, 'The Workplace', "cv:workplace")
 
     def load_project(self, load_data):
+        self._check_and_minimize_crossing(load_data)
         self._load_independent_part(load_data, 'The Project', "cv:project")
 
     def _check_date_in_range(self, begin: Union[str, datetime.date], end: Union[str, datetime.date, None],
@@ -226,7 +237,14 @@ class CVLoader:
         self.report_if_response_is_not_ok(wp_response, 'The Workplaces')
         if not wp_response.ok:
             return
-        wps = wp_response.json()
+        wps: list[dict] = wp_response.json()
+
+        # need to sort wps in order where [min(wps.end - wps.begin), .... max(wps.end - wps.begin)]
+        # This resolves an issue where the workspace with the widest date range absorbs all projects
+        # if the projects belong to a workspace that is allowed to overlap the dates of the broader workspace.
+        wps.sort(
+            key=lambda wp: int(0xffffffff) if wp['end'] is None else (to_date(wp['end']) - to_date(wp['begin'])).days
+        )
 
         # get projects
         url = f'{self.server_url}{reverse("cv:project")}'
@@ -286,10 +304,19 @@ class CVLoader:
 
         wps = wp_response.json()
 
+        drm = DateRangeMatcher(
+            [(wp['begin'], wp['end']) for wp in wps], [(wpr['begin'], wpr['end']) for wpr in load_data]
+        )
+        drm_matches = drm.match()
+
         def get_wp_by_date_range(wps, b, e):
-            for wp in wps:
-                if self._check_date_in_range(wp['begin'], wp['end'], b, e):
-                    return wp
+            _b, _e = (datetime.date.fromisoformat(v) if isinstance(v, str) else v for v in (b, e))
+            wp_match = drm_matches.get((_b, _e))
+            if wp_match:
+                wp_b, wp_e = wp_match[1]
+                for wp in wps:
+                    if wp['begin'] == str(wp_b) and wp['end'] is None if wp_e is None else wp['end'] == str(wp_e):
+                        return wp
 
         def post_hook(data):
             wp = get_wp_by_date_range(wps, data['begin'], data['end'])
@@ -376,20 +403,28 @@ class CVLoader:
 
         class ProjectTechnologyDataComparer(CompleteDataComparer):
 
-            def get_proj_by_date_range(itself, projects, at: Union[str, datetime.date, None]):
+            def get_proj_by_date_range(itself, projects, at: Union[str, datetime.date, None, list, tuple]):
                 for proj in projects:
-                    if self._check_date_in_range(proj['begin'], proj['end'], at, at):
+                    if isinstance(at, (list, tuple)):
+                        # test exact begin...end values
+                        to_date = datetime.date.fromisoformat
+                        b, e, at_b, at_e = (to_date(_) if isinstance(_, str) else _ for _ in
+                                            (proj['begin'], proj['end'], at[0], at[1]))
+                        if b == at_b and e == at_e:
+                            return proj
+
+                    elif self._check_date_in_range(proj['begin'], proj['end'], at, at):
                         return proj
 
             def _get_project(itself, pid: Union[str, int]):
                 proj = None
-                if not isinstance(pid, (str, int)):
+                if not isinstance(pid, (str, int, list, tuple)):
                     self.command.stdout.write(self.command.style.ERROR(
                         f'{msg_prefix}: `project` must be either str or int type.'
                         f' Where str is "yyyy-mm-dd" or "null" that points to a project [`begin` ... `end`] range.'
                         f' Or int that represents a `id` (PK) of project. The used value: {pid}'
                     ))
-                elif isinstance(pid, str):
+                elif isinstance(pid, (str, list, tuple)):
                     proj = itself.get_proj_by_date_range(projects, pid)
                 elif isinstance(pid, int):
                     proj = [proj for proj in projects if proj[itself.pk_field_name] == pid]

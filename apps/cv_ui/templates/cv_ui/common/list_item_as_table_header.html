@@ -1,0 +1,14 @@
+{% load cv_ui_extras %}
+
+<thead>
+    <tr>
+    {% for key in data.0.keys %}
+        {% if exclude_keys and key not in exclude_keys %}
+        <th scope="col">{% if key == "id" or key == "pk" %}#{% else %}{{ key|snake2cap }}{% endif %}</th>
+        {% endif %}
+    {% endfor %}
+    {% if buttons %}
+        <th scope="col">&nbsp;</th>
+    {% endif %}
+    </tr>
+</thead>

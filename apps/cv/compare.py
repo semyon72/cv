@@ -4,14 +4,17 @@
 # File: compare.py
 # Contact: Semyon Mamonov <semyon.mamonov@gmail.com>
 # Created by ox23 at 2023-10-23 (y-m-d) 9:25 PM
-
+import datetime
 import difflib
 import functools
 import hashlib
+import itertools
 import json
 import string
+import sys
 from collections import namedtuple
-from typing import Union, Optional
+from enum import Enum
+from typing import Union, Optional, Sequence, Iterable
 from django.conf import settings
 
 
@@ -445,6 +448,13 @@ class DataMatcher:
 
 class DataComparer:
     """
+        `DataComparer` differs from `CompleteDataComparer`, how it calculates the difference.
+        `DataComparer` relies on fixed values in `.ratio_range_to_update`,
+        while `CompleteDataComparer` has more complex and clever logic.
+
+        Of course, it's still pretty cool and can be used, but if the decision is made to clean up unused or deprecated
+        code in favor of `CompleteDataComparer', then it can be removed. But need to remember that in this case
+        we need to fix at least `CompleteDataComparer.pk_field_name` and `CompleteDataComparer._prepare_stored_dict`
     """
 
     pk_field_name = 'id'
@@ -604,4 +614,272 @@ class CompleteDataComparer(DataMatcher):
             res.append(u)
 
         # 'n' and 'd' are ignoring to be compatible with old implementation (DataComparer)
+        return res
+
+
+DateRanges = Sequence[
+    Union[
+        list[str], tuple[str, str],
+        list[datetime.date], tuple[datetime.date, datetime.date],
+        list[None], Union[tuple[str, None], tuple[None, None], tuple[None, str]],
+    ]
+]
+
+
+class DateRangeCrossing:
+    """
+        each element (item) of date_ranges must be well formatted - tuple or list (sequence) with 2 elements
+    """
+
+    def __init__(self, date_ranges) -> None:
+        self.date_ranges: DateRanges = date_ranges
+
+    @property
+    def date_ranges(self):
+        return self._date_ranges
+
+    def _translate_to_date(self, val):
+        if isinstance(val, str):
+            val = datetime.date.fromisoformat(val)
+        elif isinstance(val, datetime.date):
+            pass
+        assert isinstance(val, datetime.date) or val is None, f'Bad logic _translate_to_date [{val}]'
+
+        return val
+
+    @staticmethod
+    def _normalize_dbe(dbe):
+        res = [datetime.date.min.toordinal(), datetime.date.max.toordinal()]
+        if dbe[0] is not None:
+            res[0] = int(dbe[0].toordinal())
+
+        if dbe[1] is not None:
+            res[1] = int(dbe[1].toordinal())
+        return res
+
+    @date_ranges.setter
+    def date_ranges(self, date_ranges: DateRanges):
+        """
+            conversion dates to datetime.date-s
+        """
+        self._date_ranges = []
+        for dbe in date_ranges:
+            db, de = [self._translate_to_date(v) for v in dbe[:2]]
+
+            ndb, nde = self._normalize_dbe([db, de])
+            if ndb > nde:
+                raise ValueError(f'Date begin "{db}" must be less or equal date end "{de}"')
+
+            self._date_ranges.append((db, de))
+
+    def _natural_sort(self, date_ranges: list):
+        """
+            !!! This has the side effect, `date_ranges` changes order because it does an in-place sorting
+
+            date_ranges is list of [[datetime.date, datetime.date]...[datetime.date, datetime.date]]
+
+            Example, in integer values. Each element is integer equivalent of (date_begin, date_end):
+                [(0, 105000), (10, 500), (0, 500), (20, 300), (100, 100500)].sort() =>
+                [(0, 500), (0, 105000), (10, 500), (20, 300), (100, 100500)]
+            and this right behaviour (natural order)
+        """
+        date_ranges.sort(key=self._normalize_dbe)
+
+    def _is_crossed(self, a, b):
+        (b, e), (B, E) = self._normalize_dbe(a), self._normalize_dbe(b)
+        return B <= e and E >= b
+
+    def _calc_crossings(self, min_crossing_sort=False) -> dict[Union[list, tuple], list]:
+        """
+            Has complexity O(n^2)
+            If min_crossing_sort == True then result will sorted by [less_crossed .... most_crossed]
+        """
+        res = {}
+        for i, cur in enumerate(self.date_ranges):
+            crossings = res.setdefault(cur, [[], i])
+            for j, other in enumerate(self.date_ranges):
+                if i == j:
+                    continue
+                if self._is_crossed(cur, other):
+                    crossings[0].append(other)
+
+        if min_crossing_sort:
+            res = {k: v for k, v in sorted(res.items(), key=lambda kv: len(kv[1][0]))}
+
+        return res
+
+    def _split_crossings(self, dates):
+        """
+            In fact, the order of the date ranges in `dates' determines the result.
+            This method just separate those who can be `uncrossed`.
+        """
+        uncrossed, crossed = [], []
+        while dates:
+            cur = dates.pop(0)
+            uncrossed.append(cur)
+
+            i = 0
+            while i < len(dates):
+                other = dates[i]
+                if self._is_crossed(cur, other):
+                    crossed.append(other)
+                    del dates[i]
+                    continue
+                i += 1
+
+        return uncrossed, crossed
+
+    def min_crossings(self):
+        """
+            Expensive, but gives best result if self.date_ranges is not sorted in the right way.
+            Internally, it uses the expensive self._calc_crossings(True).
+
+            If you don't worrying about minimizing the number of crossed elements, use self._split_crossings(dates)
+        """
+        dates = [*self._calc_crossings(True)]
+        uncrossed, crossed = self._split_crossings(dates)
+        self._natural_sort(uncrossed)
+        self._natural_sort(crossed)
+
+        return uncrossed, crossed
+
+    def crossings(self, min_crossing_sort=False):
+        """
+            In contrast, `min_crossings` does not precompute the intersections of each and sort.
+
+            If min_crossing_sort == True then result will sorted by [less_crossed_range .... most_crossed_range]
+        """
+        uncrossed, crossed = self._split_crossings(self.date_ranges)
+        if min_crossing_sort:
+            self._natural_sort(uncrossed)
+            self._natural_sort(crossed)
+
+        return uncrossed, crossed
+
+
+class CrossingType(Enum):
+    partial = 'partial'
+    exact = 'exact'
+    include = 'include'
+
+
+class DateRangeMatcher:
+
+    def __init__(self, haystack: DateRanges, needles: DateRanges) -> None:
+        self.haystack = DateRangeCrossing(haystack)
+        self.needles = DateRangeCrossing(needles)
+
+    def _calc_crossing_distances(self, haystack: Iterable, needle):
+        """
+            returns list of tuples (distance, haystack_item, description)
+            intersections for needle
+        """
+        # calculates a max crossing by "distance"
+        b, e = DateRangeCrossing._normalize_dbe(needle)
+        assert b <= e, f'needle - `begin` > `end` {needle}'
+
+        res = []  # (max_distance, original_haystack_item, description)
+        for h in haystack:
+            B, E = DateRangeCrossing._normalize_dbe(h)
+            assert B <= E, f'haystack item - `begin` > `end` {h}'
+            distance = min(E, e) - max(B, b)
+            if distance < 0:
+                # no crossing
+                continue
+
+            crossing_type = CrossingType.partial
+            if B == b and E == e:
+                crossing_type = CrossingType.exact
+            elif B <= b and E >= e:
+                crossing_type = CrossingType.include
+
+            res.append((distance, h, crossing_type))
+
+        return res
+
+    def _calc_max_crossing_distance(self, haystack, needle):
+        res = None
+        crossings = self._calc_crossing_distances(haystack, needle)
+        if crossings:
+            res = functools.reduce(lambda c, n: c if c[0] >= n[0] else n, crossings)
+        return res
+
+    def _calc_prioritized_crossing(self, haystack: Iterable, needle):
+        """
+            Returns best case for crossing needle in haystack
+            Prioritization:
+            if 'exact' -> best case
+            if `include` -> is better case than `partial`,
+             but, if  `include` -> corresponds into smaller (narrower) item of haystack then it is better case
+             than `include` corresponds into more wider range.
+            if 'partial' -> max crossing is better
+        """
+        crossings = {}
+        for item in self._calc_crossing_distances(haystack, needle):
+            crossings.setdefault(item[2], []).append(item)
+
+        if not crossings:
+            return
+
+        res = crossings.get(CrossingType.exact)
+        if res:
+            return res[0]
+
+        res = min(
+            crossings.get(CrossingType.include, []),
+            key=lambda x: functools.reduce(lambda a, b: b - a, DateRangeCrossing._normalize_dbe(x[1])),
+            default=None
+        )
+        if res:
+            return res
+
+        res = max(crossings.get(CrossingType.partial, []), key=lambda x: x[0], default=None)
+        if res:
+            return res
+
+    def match(self):
+        """
+        In contrast, `match1` does not search separately in uncrossed and crossed ranges.
+        Although it preserves their order.
+        The subtlety that distinguishes this method is the handling of the `include` crossing.
+        """
+        res = {}
+
+        h_uncrossed, h_crossed = self.haystack.crossings()
+
+        for needle in self.needles.date_ranges:
+            m = self._calc_prioritized_crossing(itertools.chain(h_uncrossed, h_crossed), needle)
+            if m:
+                res[needle] = m
+            else:
+                res[needle] = None
+
+        return res
+
+    def match1(self):
+        res = {}
+
+        h_uncrossed, h_crossed = self.haystack.min_crossings()
+        for needle in self.needles.date_ranges:
+            m_uncrossed = self._calc_prioritized_crossing(h_uncrossed, needle)
+            if m_uncrossed and m_uncrossed[2] in (CrossingType.exact, CrossingType.include):
+                res[needle] = m_uncrossed
+                continue
+
+            m_crossed = self._calc_prioritized_crossing(h_crossed, needle)
+            if m_crossed and m_crossed[2] in (CrossingType.exact, CrossingType.include):
+                res[needle] = m_crossed
+                continue
+
+            assert m_uncrossed is None or m_uncrossed[2] == CrossingType.partial
+            assert m_crossed is None or m_crossed[2] == CrossingType.partial
+
+            if m_crossed is None:
+                res[needle] = m_uncrossed
+            elif m_uncrossed is None:
+                res[needle] = m_crossed
+            else:
+                # max crossing
+                res[needle] = max(m_uncrossed, m_crossed, key=lambda c: c[0])
+
         return res

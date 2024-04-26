@@ -99,9 +99,11 @@ def _test_date_intersection_constraint(test_case: TestCase, model: Type[Model], 
         {'begin': '2023-05-13', 'end': None, 'valid': False},
         {'begin': '2023-05-15', 'end': None, 'valid': False},
         {'begin': '2023-05-17', 'end': None, 'valid': False},
-        {'begin': '2023-05-01', 'end': '2023-05-05', 'valid': True},
-        {'begin': '2023-05-10', 'end': '2023-05-13', 'valid': True},
-        {'begin': '2023-05-10', 'end': '2023-05-15', 'valid': True},
+        {'begin': '2023-05-16', 'end': '2023-05-20', 'allow_date_crossing': True, 'valid': True},
+        {'begin': '2023-05-15', 'end': None, 'allow_date_crossing': True, 'valid': True},
+        {'begin': '2023-05-01', 'end': '2023-05-04', 'valid': True},
+        {'begin': '2023-05-11', 'end': '2023-05-13', 'valid': True},
+        {'begin': '2023-05-11', 'end': '2023-05-14', 'valid': True},
     ]
 
     for item in intersection_tests_data:
@@ -583,7 +585,7 @@ class TestCVProjects(TestCase):
         wp_kwargs = {'profile': cv_profile, 'workplace': 'fgdfg', 'begin': begin, 'end': end}
         workplace = cv_models.CVWorkplace.objects.create(**wp_kwargs)
 
-        proj_kwargs = {# cv_models.CVProject._meta.pk.attname: 5,
+        proj_kwargs = {  # cv_models.CVProject._meta.pk.attname: 5,
             'profile': cv_profile, 'title': 'tttttt', 'description': 'fgdfg', 'prerequisite': 'dfgdfg',
             'result': 'fgsfdgsf', 'begin': begin, 'end': end,
         }
@@ -591,7 +593,7 @@ class TestCVProjects(TestCase):
 
         # to understand the right id-s (like wp.id = 1, proj.id=2)
         project = cv_models.CVProject.objects.create(
-            ** proj_kwargs | {'begin': dummy_project.end, 'end': dummy_project.end + datetime.timedelta(2)}
+            ** proj_kwargs | {'begin': dummy_project.end+datetime.timedelta(1), 'end': dummy_project.end + datetime.timedelta(3)}
         )
 
         wp_proj_kwargs = {
@@ -827,8 +829,8 @@ class TestCVProjects(TestCase):
                 self.assertTrue(str(exc.exception).startswith('CHECK constraint failed:'))
 
             with self.subTest(f'`{pname}` right - `end` is Null ({cname}.[end|duration] is fixed)'):
-                    pobj.end = None
-                    pobj.save()
+                pobj.end = None
+                pobj.save()
 
             prepare_cback(pobj, cobj)
 

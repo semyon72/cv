@@ -1,0 +1,19 @@
+{% load rest_framework %}
+
+{% if api_response.status_code == 404 %}
+    {# Not found. #}
+    <div class="alert alert-danger" role="alert">{{ api_response.reason_phrase }}</div>
+    {{ buttons.list }}
+{% else %}
+    {# Common flow #}
+    <div class="alert alert-danger" role="alert">Do you really want to delete?</div>
+    {% csrf_token %}
+    {% if data.serializer %}
+        {% render_form data.serializer %}
+    {% endif %}
+    {% for btn_name, btn in buttons.items %}
+        {{ btn }}
+    {% endfor %}
+{% endif %}
+
+

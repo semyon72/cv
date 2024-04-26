@@ -9,8 +9,6 @@ from django.test import TestCase
 from django.db import connections, DEFAULT_DB_ALIAS
 
 from ..db_patch import Patcher, BasePatch
-from ..patches import CountRangeIntersectionPatch
-from ..sql import range_intersection_sql
 
 
 class MockPatch(BasePatch):
@@ -193,197 +191,198 @@ class TestBasePatch(TestCase):
             ['check', 'patch'] if patch.db_wrapper.vendor in patch.databases_require_patch_on_each_connection else []
         )
 
-
-class TestCountRangeIntersectionPatch(TestCase):
-
-    def setUp(self) -> None:
-        db_wrapper = connections['default']
-        self.patch = CountRangeIntersectionPatch(db_wrapper)
-
-    def test_0_check_sqlite(self):
-        self.assertFalse(self.patch.check_sqlite())
-
-    def _real_check_in_db_sqlite(self):
-        # User-defined functions immediately when they were created can be viewed through
-        # 'SELECT * FROM pragma_function_list WHERE name="md5"' ("md5" for example),
-        # however, when function was deleted in the current session using con.create_function("md5", 1, None)
-        # it still remains in 'pragma_function_list', but in the case of its call,
-        # it will generated error 'sqlite3.OperationalError: user-defined function raised exception'.
-        # !!! Also, this exception appears if the user-defined function, really, has problem.
-        # But, the function was never created will raise the error 'sqlite3.OperationalError: no such function: md5'
-        # Thus, the not worse way to test for existence is to catch sqlite3.OperationalError
-
-        sql = 'SELECT * FROM pragma_function_list WHERE name=?'
-        cursor = self.patch.db_wrapper.create_cursor()
-        try:
-            cursor.execute(sql, [self.patch.name])
-            r = cursor.fetchone()
-        finally:
-            cursor.close()
-
-        return r
-
-    def _create_fixtures(self):
-        # CREATE TABLE test (
-        # "begin" INTEGER DEFAULT null,
-        # "end" INTEGER DEFAULT null,
-        # "start" INTEGER DEFAULT null,
-        # "finish" INTEGER DEFAULT null
-        # );
-        #
-        # INSERT INTO test ("begin", "end", "start", "finish") VALUES (1, 7, 4, 10);
-        # INSERT INTO test ("begin", "end", "start", "finish") VALUES (7, null, 11, null);
-        #
-        sqls = ('CREATE TABLE test ("id" integer not null primary key autoincrement,'
-                ' "begin" INTEGER DEFAULT null, "end" INTEGER DEFAULT null,'
-                ' "start" INTEGER DEFAULT null, "finish" INTEGER DEFAULT null)',
-                'INSERT INTO test ("begin", "end", "start", "finish") VALUES (1, 7, 4, 10)',
-                'INSERT INTO test ("begin", "end", "start", "finish") VALUES (7, null, 11, null)'
-                )
-
-        cursor = self.patch.db_wrapper.create_cursor()
-        try:
-            for i, sql in enumerate(sqls):
-                cursor.execute(sql)
-                tres = 1
-                if i == 0:
-                    tres = -1
-                with self.subTest(create_step=i):
-                    self.assertEqual(tres, cursor.rowcount)
-        finally:
-            cursor.close()
-
-    def test_1_patch_sqlite(self):
-        # If Patcher already connected to connection_created then function is exist already.
-        # For example, used in AppConfig.ready.
-        # Thus, we need to work out this case for further testing purposes
-
-        # main test
-        res = self._real_check_in_db_sqlite()
-        if res is None:
-            self.patch.patch_sqlite()
-
-        # function created successfully
-        res = self._real_check_in_db_sqlite()
-        self.assertIsNotNone(res)
-
-        # TEST OF RIGHT LOGIC
-        self._create_fixtures()
-
-        cursor = self.patch.db_wrapper.create_cursor()
-        # -- partial intersection with null
-        # SELECT * FROM test WHERE 8 < ifnull("end", max(8,15)+1) and 15 > ifnull("begin", min(8,15)-1); -- 1
-        # -- 7,,11,
-        cursor.execute('SELECT %s(null, 8, 15, "test")' % self.patch.name)
-        r = cursor.fetchone()
-        self.assertIsNotNone(r)
-        self.assertEqual(1, r[0])
-
-        # -- partial intersection and with null too
-        # SELECT * FROM test WHERE 5 < ifnull("end", max(5,15)+1) and 15 > ifnull("begin", min(5,15)-1); -- 2
-        # -- 1,7,4,10
-        # -- 7,,11,
-        cursor.execute('SELECT %s(null, 5, 15, "test")' % self.patch.name)
-        r = cursor.fetchone()
-        self.assertIsNotNone(r)
-        self.assertEqual(2, r[0])
-
-        # -- no intersection exclude nulled row
-        # SELECT * FROM test WHERE 7 < ifnull("end", max(7,9)+1) and 9 > ifnull("begin", min(7,9)-1); -- 1
-        # -- 7,,11,
-        cursor.execute('SELECT %s(null, 7, 9, "test")' % self.patch.name)
-        r = cursor.fetchone()
-        self.assertIsNotNone(r)
-        self.assertEqual(1, r[0])
-
-        # -- surrounded intersection (with field that no standard name)
-        # SELECT * FROM test WHERE 3 < ifnull("finish", max(3,15)+1) and 15 > ifnull("start", min(3,15)-1); -- 2
-        # -- 1,7,4,10
-        # -- 7,,11,
-        cursor.execute('SELECT %s(null, 3, 15, "test", "start", "finish")' % self.patch.name)
-        r = cursor.fetchone()
-        self.assertIsNotNone(r)
-        self.assertEqual(2, r[0])
-
-        # -- Not intersected (with field that no standard name)
-        # SELECT * FROM test WHERE 1 < ifnull("finish", max(1,4)+1) and 4 > ifnull("start", min(1,4)-1); -- 0
-        cursor.execute('SELECT %s(null, 1, 4, "test", "start", "finish")' % self.patch.name)
-        r = cursor.fetchone()
-        self.assertIsNotNone(r)
-        self.assertEqual(0, r[0])
-
-    def _create_date_fixtures(self, data: list[dict]):
-        csql = 'CREATE TABLE test ("id" integer not null primary key autoincrement, "begin" date, "end" date)'
-        isql = 'INSERT INTO test ("begin", "end") VALUES (:begin, :end)'
-
-        cursor = self.patch.db_wrapper.create_cursor()
-        try:
-            with self.subTest(create_test_table=''):
-                cursor.execute(csql)
-                self.assertEqual(-1, cursor.rowcount)
-            for i, item in enumerate(data):
-                with self.subTest(insert_test_data=i):
-                    cursor.execute(isql, item)
-                    self.assertEqual(1, cursor.rowcount)
-        finally:
-            cursor.close()
-
-    def test_2_patch_sqlite(self):
-        # If Patcher already connected to connection_created then function is exist already.
-        # For example, used in AppConfig.ready.
-        # Thus, we need to work out this case for further testing purposes
-
-        # main test
-        res = self._real_check_in_db_sqlite()
-        if res is None:
-            self.patch.patch_sqlite()
-
-        # function created successfully
-        res = self._real_check_in_db_sqlite()
-        self.assertIsNotNone(res)
-
-        # TEST LOGIC
-        # like test_1_patch_sqlite but more full and with dates
-
-        # Source data
-        data = [
-            {'begin': '2023-05-05', 'end': '2023-05-10'},
-            {'begin': '2023-05-15', 'end': None},
-        ]
-
-        # Test cases
-        tcases = [
-            {'bv': '2023-05-01', 'ev': '2023-05-05', 'result': []},
-            {'bv': '2023-05-10', 'ev': '2023-05-13', 'result': []},
-            {'bv': '2023-05-10', 'ev': '2023-05-15', 'result': []},
-            {'bv': '2023-05-03', 'ev': '2023-05-07', 'result': [['2023-05-05', '2023-05-10']]},
-            {'bv': '2023-05-05', 'ev': '2023-05-10', 'result': [['2023-05-05', '2023-05-10']]},
-            {'bv': '2023-05-03', 'ev': '2023-05-11', 'result': [['2023-05-05', '2023-05-10']]},
-            {'bv': '2023-05-07', 'ev': '2023-05-11', 'result': [['2023-05-05', '2023-05-10']]},
-            {'bv': '2023-05-13', 'ev': '2023-05-16', 'result': [['2023-05-15', None]]},
-            {'bv': '2023-05-16', 'ev': '2023-05-20', 'result': [['2023-05-15', None]]},
-            {'bv': '2023-05-03', 'ev': None, 'result': [['2023-05-05', '2023-05-10'], ['2023-05-15', None]]},
-            {'bv': '2023-05-09', 'ev': None, 'result': [['2023-05-05', '2023-05-10'], ['2023-05-15', None]]},
-            {'bv': '2023-05-10', 'ev': None, 'result': [['2023-05-15', None]]},
-            {'bv': '2023-05-13', 'ev': None, 'result': [['2023-05-15', None]]},
-            {'bv': '2023-05-15', 'ev': None, 'result': [['2023-05-15', None]]},
-            {'bv': '2023-05-17', 'ev': None, 'result': [['2023-05-15', None]]},
-        ]
-
-        self._create_date_fixtures(data)
-        ri_sql, ri_sql_prms = range_intersection_sql('test')
-        cursor = self.patch.db_wrapper.create_cursor()
-        try:
-            for case in tcases:
-                bv, ev, result = case['bv'], case['ev'], case['result']
-                caption = str(bv)+'...'+str(ev)
-                with self.subTest(test_sql=caption):
-                    cursor.execute(ri_sql, ri_sql_prms | {'bv': bv, 'ev': ev})
-                    for i, r in enumerate(cursor):
-                        self.assertEqual([str(f) for f in result[i]], [str(f) for f in r][1:])
-
-                with self.subTest(test_sql_function=caption):
-                    cursor.execute('SELECT %s(null, :bv, :ev, "test")' % self.patch.name, case)
-                    self.assertEqual(len(result), cursor.fetchone()[0])
-        finally:
-            cursor.close()
+# This was left, just for an example of how to test the sql function that is created directly on an in-memory table.
+#
+# class TestCountRangeIntersectionPatch(TestCase):
+#
+#     def setUp(self) -> None:
+#         db_wrapper = connections['default']
+#         self.patch = CountRangeIntersectionPatch(db_wrapper)
+#
+#     def test_0_check_sqlite(self):
+#         self.assertFalse(self.patch.check_sqlite())
+#
+#     def _real_check_in_db_sqlite(self):
+#         # User-defined functions immediately when they were created can be viewed through
+#         # 'SELECT * FROM pragma_function_list WHERE name="md5"' ("md5" for example),
+#         # however, when function was deleted in the current session using con.create_function("md5", 1, None)
+#         # it still remains in 'pragma_function_list', but in the case of its call,
+#         # it will generated error 'sqlite3.OperationalError: user-defined function raised exception'.
+#         # !!! Also, this exception appears if the user-defined function, really, has problem.
+#         # But, the function was never created will raise the error 'sqlite3.OperationalError: no such function: md5'
+#         # Thus, the not worse way to test for existence is to catch sqlite3.OperationalError
+#
+#         sql = 'SELECT * FROM pragma_function_list WHERE name=?'
+#         cursor = self.patch.db_wrapper.create_cursor()
+#         try:
+#             cursor.execute(sql, [self.patch.name])
+#             r = cursor.fetchone()
+#         finally:
+#             cursor.close()
+#
+#         return r
+#
+#     def _create_fixtures(self):
+#         # CREATE TABLE test (
+#         # "begin" INTEGER DEFAULT null,
+#         # "end" INTEGER DEFAULT null,
+#         # "start" INTEGER DEFAULT null,
+#         # "finish" INTEGER DEFAULT null
+#         # );
+#         #
+#         # INSERT INTO test ("begin", "end", "start", "finish") VALUES (1, 7, 4, 10);
+#         # INSERT INTO test ("begin", "end", "start", "finish") VALUES (7, null, 11, null);
+#         #
+#         sqls = ('CREATE TABLE test ("id" integer not null primary key autoincrement,'
+#                 ' "begin" INTEGER DEFAULT null, "end" INTEGER DEFAULT null,'
+#                 ' "start" INTEGER DEFAULT null, "finish" INTEGER DEFAULT null)',
+#                 'INSERT INTO test ("begin", "end", "start", "finish") VALUES (1, 7, 4, 10)',
+#                 'INSERT INTO test ("begin", "end", "start", "finish") VALUES (7, null, 11, null)'
+#                 )
+#
+#         cursor = self.patch.db_wrapper.create_cursor()
+#         try:
+#             for i, sql in enumerate(sqls):
+#                 cursor.execute(sql)
+#                 tres = 1
+#                 if i == 0:
+#                     tres = -1
+#                 with self.subTest(create_step=i):
+#                     self.assertEqual(tres, cursor.rowcount)
+#         finally:
+#             cursor.close()
+#
+#     def test_1_patch_sqlite(self):
+#         # If Patcher already connected to connection_created then function is exist already.
+#         # For example, used in AppConfig.ready.
+#         # Thus, we need to work out this case for further testing purposes
+#
+#         # main test
+#         res = self._real_check_in_db_sqlite()
+#         if res is None:
+#             self.patch.patch_sqlite()
+#
+#         # function created successfully
+#         res = self._real_check_in_db_sqlite()
+#         self.assertIsNotNone(res)
+#
+#         # TEST OF RIGHT LOGIC
+#         self._create_fixtures()
+#
+#         cursor = self.patch.db_wrapper.create_cursor()
+#         # -- partial intersection with null
+#         # SELECT * FROM test WHERE 8 < ifnull("end", max(8,15)+1) and 15 > ifnull("begin", min(8,15)-1); -- 1
+#         # -- 7,,11,
+#         cursor.execute('SELECT %s(null, 8, 15, "test")' % self.patch.name)
+#         r = cursor.fetchone()
+#         self.assertIsNotNone(r)
+#         self.assertEqual(1, r[0])
+#
+#         # -- partial intersection and with null too
+#         # SELECT * FROM test WHERE 5 < ifnull("end", max(5,15)+1) and 15 > ifnull("begin", min(5,15)-1); -- 2
+#         # -- 1,7,4,10
+#         # -- 7,,11,
+#         cursor.execute('SELECT %s(null, 5, 15, "test")' % self.patch.name)
+#         r = cursor.fetchone()
+#         self.assertIsNotNone(r)
+#         self.assertEqual(2, r[0])
+#
+#         # -- no intersection exclude nulled row
+#         # SELECT * FROM test WHERE 7 < ifnull("end", max(7,9)+1) and 9 > ifnull("begin", min(7,9)-1); -- 1
+#         # -- 7,,11,
+#         cursor.execute('SELECT %s(null, 7, 9, "test")' % self.patch.name)
+#         r = cursor.fetchone()
+#         self.assertIsNotNone(r)
+#         self.assertEqual(1, r[0])
+#
+#         # -- surrounded intersection (with field that no standard name)
+#         # SELECT * FROM test WHERE 3 < ifnull("finish", max(3,15)+1) and 15 > ifnull("start", min(3,15)-1); -- 2
+#         # -- 1,7,4,10
+#         # -- 7,,11,
+#         cursor.execute('SELECT %s(null, 3, 15, "test", "start", "finish")' % self.patch.name)
+#         r = cursor.fetchone()
+#         self.assertIsNotNone(r)
+#         self.assertEqual(2, r[0])
+#
+#         # -- Not intersected (with field that no standard name)
+#         # SELECT * FROM test WHERE 1 < ifnull("finish", max(1,4)+1) and 4 > ifnull("start", min(1,4)-1); -- 0
+#         cursor.execute('SELECT %s(null, 1, 4, "test", "start", "finish")' % self.patch.name)
+#         r = cursor.fetchone()
+#         self.assertIsNotNone(r)
+#         self.assertEqual(0, r[0])
+#
+#     def _create_date_fixtures(self, data: list[dict]):
+#         csql = 'CREATE TABLE test ("id" integer not null primary key autoincrement, "begin" date, "end" date)'
+#         isql = 'INSERT INTO test ("begin", "end") VALUES (:begin, :end)'
+#
+#         cursor = self.patch.db_wrapper.create_cursor()
+#         try:
+#             with self.subTest(create_test_table=''):
+#                 cursor.execute(csql)
+#                 self.assertEqual(-1, cursor.rowcount)
+#             for i, item in enumerate(data):
+#                 with self.subTest(insert_test_data=i):
+#                     cursor.execute(isql, item)
+#                     self.assertEqual(1, cursor.rowcount)
+#         finally:
+#             cursor.close()
+#
+#     def test_2_patch_sqlite(self):
+#         # If Patcher already connected to connection_created then function is exist already.
+#         # For example, used in AppConfig.ready.
+#         # Thus, we need to work out this case for further testing purposes
+#
+#         # main test
+#         res = self._real_check_in_db_sqlite()
+#         if res is None:
+#             self.patch.patch_sqlite()
+#
+#         # function created successfully
+#         res = self._real_check_in_db_sqlite()
+#         self.assertIsNotNone(res)
+#
+#         # TEST LOGIC
+#         # like test_1_patch_sqlite but more full and with dates
+#
+#         # Source data
+#         data = [
+#             {'begin': '2023-05-05', 'end': '2023-05-10'},
+#             {'begin': '2023-05-15', 'end': None},
+#         ]
+#
+#         # Test cases
+#         tcases = [
+#             {'bv': '2023-05-01', 'ev': '2023-05-05', 'result': []},
+#             {'bv': '2023-05-10', 'ev': '2023-05-13', 'result': []},
+#             {'bv': '2023-05-10', 'ev': '2023-05-15', 'result': []},
+#             {'bv': '2023-05-03', 'ev': '2023-05-07', 'result': [['2023-05-05', '2023-05-10']]},
+#             {'bv': '2023-05-05', 'ev': '2023-05-10', 'result': [['2023-05-05', '2023-05-10']]},
+#             {'bv': '2023-05-03', 'ev': '2023-05-11', 'result': [['2023-05-05', '2023-05-10']]},
+#             {'bv': '2023-05-07', 'ev': '2023-05-11', 'result': [['2023-05-05', '2023-05-10']]},
+#             {'bv': '2023-05-13', 'ev': '2023-05-16', 'result': [['2023-05-15', None]]},
+#             {'bv': '2023-05-16', 'ev': '2023-05-20', 'result': [['2023-05-15', None]]},
+#             {'bv': '2023-05-03', 'ev': None, 'result': [['2023-05-05', '2023-05-10'], ['2023-05-15', None]]},
+#             {'bv': '2023-05-09', 'ev': None, 'result': [['2023-05-05', '2023-05-10'], ['2023-05-15', None]]},
+#             {'bv': '2023-05-10', 'ev': None, 'result': [['2023-05-15', None]]},
+#             {'bv': '2023-05-13', 'ev': None, 'result': [['2023-05-15', None]]},
+#             {'bv': '2023-05-15', 'ev': None, 'result': [['2023-05-15', None]]},
+#             {'bv': '2023-05-17', 'ev': None, 'result': [['2023-05-15', None]]},
+#         ]
+#
+#         self._create_date_fixtures(data)
+#         ri_sql, ri_sql_prms = range_intersection_sql('test')
+#         cursor = self.patch.db_wrapper.create_cursor()
+#         try:
+#             for case in tcases:
+#                 bv, ev, result = case['bv'], case['ev'], case['result']
+#                 caption = str(bv)+'...'+str(ev)
+#                 with self.subTest(test_sql=caption):
+#                     cursor.execute(ri_sql, ri_sql_prms | {'bv': bv, 'ev': ev})
+#                     for i, r in enumerate(cursor):
+#                         self.assertEqual([str(f) for f in result[i]], [str(f) for f in r][1:])
+#
+#                 with self.subTest(test_sql_function=caption):
+#                     cursor.execute('SELECT %s(null, :bv, :ev, "test")' % self.patch.name, case)
+#                     self.assertEqual(len(result), cursor.fetchone()[0])
+#         finally:
+#             cursor.close()

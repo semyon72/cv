@@ -1,21 +1,20 @@
 import datetime
 import pathlib
-from copy import copy
-from os.path import splitext
 
 from django.contrib.auth import get_user_model
 from django.core.files.storage import Storage
 from django.db import models
 
 from .model_constraint import (
-    add_constraints, length_range_constraint, date_end_gte_begin_or_null_constraint,
-    education_dates_crossing_constraint, project_dates_crossing_constraint,
-    project_technology_duration_in_project_constraint, workplace_dates_crossing_constraint,
+    add_constraints, length_range_constraint,
+    project_technology_duration_in_project_constraint,
     workplace_responsibility_dates_in_workplace_constraint, workplace_project_same_user_constraint,
     workplace_project_project_dates_in_workplace_constraint,
     workplace_dates_gte_project_constraint, project_dates_lte_workplace_constraint,
     workplace_dates_gte_workplace_responsibility, project_dates_gte_project_technology,
     workplace_responsibility_dates_crossing_constraint, technology_unique_together_with_profile,
+    EducationDateCrossingConstraint, WorkplaceDateCrossingConstraint, ProjectDateCrossingConstraint,
+    DateBeginIsNotNullAndEndIsGreaterOrEqualConstraint, WorkplaceResponsibilityDateCrossingConstraint
 )
 
 
@@ -121,7 +120,6 @@ class CVUserResource(CVAbstractBaseModel):
     institution=length_range_constraint,
     speciality=length_range_constraint,
     degree=length_range_constraint,
-    begin__end=[date_end_gte_begin_or_null_constraint, education_dates_crossing_constraint],
 )
 class CVEducation(CVAbstractBaseModel):
     """
@@ -134,6 +132,13 @@ class CVEducation(CVAbstractBaseModel):
     speciality = models.CharField(max_length=248)
     degree = models.CharField(max_length=24)
     complete = models.BooleanField(default=True)
+    allow_date_crossing = models.BooleanField(default=False)
+
+    class Meta:
+        constraints = [
+            DateBeginIsNotNullAndEndIsGreaterOrEqualConstraint().set_name_prefix('education'),
+            EducationDateCrossingConstraint(),
+        ]
 
 
 @add_constraints(
@@ -148,7 +153,7 @@ class CVLanguage(CVAbstractBaseModel):
     profile = models.ForeignKey(CVUserProfile, on_delete=models.CASCADE)
     lang = models.CharField(max_length=24)
     level = models.CharField(max_length=24)
-    notes = models.CharField(max_length=248)
+    notes = models.CharField(max_length=248, null=True, default=None, blank=True)
 
 
 class CVHobby(CVAbstractBaseModel):
@@ -165,8 +170,6 @@ class CVHobby(CVAbstractBaseModel):
     prerequisite=length_range_constraint,
     result=length_range_constraint,
     begin__end=[
-        date_end_gte_begin_or_null_constraint,
-        project_dates_crossing_constraint,
         project_dates_lte_workplace_constraint,
         project_dates_gte_project_technology,
     ],
@@ -187,6 +190,13 @@ class CVProject(CVAbstractBaseModel):
     # TODO: probably, can add default= func_to_get_begin from CVWorkplace through CVWorkplaceProject
     begin = models.DateField(default=datetime.date.today)
     end = models.DateField(null=True, default=None, blank=True)
+    allow_date_crossing = models.BooleanField(default=False)
+
+    class Meta:
+        constraints = [
+            DateBeginIsNotNullAndEndIsGreaterOrEqualConstraint().set_name_prefix('project'),
+            ProjectDateCrossingConstraint(),
+        ]
 
 
 @add_constraints(
@@ -247,8 +257,6 @@ class CVProjectTechnology(CVAbstractBaseModel):
 @add_constraints(
     workplace=length_range_constraint,
     begin__end=[
-        date_end_gte_begin_or_null_constraint,
-        workplace_dates_crossing_constraint,
         workplace_dates_gte_project_constraint,
         workplace_dates_gte_workplace_responsibility,
     ],
@@ -261,12 +269,18 @@ class CVWorkplace(CVAbstractBaseModel):
     workplace = models.CharField(max_length=248)
     begin = models.DateField(default=datetime.date.today)
     end = models.DateField(null=True, default=None, blank=True)
+    allow_date_crossing = models.BooleanField(default=False)
+
+    class Meta:
+        constraints = [
+            DateBeginIsNotNullAndEndIsGreaterOrEqualConstraint().set_name_prefix('workplace'),
+            WorkplaceDateCrossingConstraint(),
+        ]
 
 
 @add_constraints(
     role=length_range_constraint,
     responsibility=length_range_constraint,
-    begin__end=[date_end_gte_begin_or_null_constraint, workplace_responsibility_dates_crossing_constraint],
     workplace__begin__end=workplace_responsibility_dates_in_workplace_constraint,
 )
 class CVWorkplaceResponsibility(CVAbstractBaseModel):
@@ -280,9 +294,15 @@ class CVWorkplaceResponsibility(CVAbstractBaseModel):
     #  but in a complex case it matters (much projects in one workplace with career growth or change of responsibility)
     #  For now, We currently limit it to 1024 characters using `constraint`
     responsibility = models.TextField(max_length=1024)
-    role = models.CharField(max_length=48)
+    role = models.CharField(max_length=248)
     begin = models.DateField(default=datetime.date.today)
     end = models.DateField(null=True, default=None, blank=True)
+
+    class Meta:
+        constraints = [
+            DateBeginIsNotNullAndEndIsGreaterOrEqualConstraint().set_name_prefix('workplace_responsibility'),
+            WorkplaceResponsibilityDateCrossingConstraint(),
+        ]
 
 
 @add_constraints(

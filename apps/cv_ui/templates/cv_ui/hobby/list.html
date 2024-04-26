@@ -1,0 +1,37 @@
+{% extends 'cv_ui/index.html' %}
+{% load static %}
+{% load cv_ui_extras %}
+
+
+{% block title %}Hobby{% endblock title %}
+
+{% block meta %}
+{{ block.super }}
+<link rel="stylesheet" type="text/css" href="{% static "cv_ui/css/table_collapsed_columns.css" %}">
+{% endblock %}
+
+{% block content %}
+    <h3>Hobbies</h3>
+    <a href="{% url 'cv_ui:hobby-create'%}" class="btn btn-primary">Create</a>
+    {% add2context as exclude_keys %}profile='profile'{% endadd2context %}
+    {% for item in data %}
+    {% add2context as buttons %}
+        detail='<a href="{% url 'cv_ui:hobby-retrieve' pk=item.id %}" class="btn btn-primary">Detail</a>'
+        update='<a href="{% url 'cv_ui:hobby-update' pk=item.id %}" class="btn btn-warning">Update</a>'
+        delete='<a href="{% url 'cv_ui:hobby-delete' pk=item.id %}" class="btn btn-danger">Delete</a>'
+    {% endadd2context %}
+    {% if forloop.first %}
+    <table class="table-responsive-sm">
+    {% include 'cv_ui/common/list_item_as_table_header.html' %}
+    <tbody>
+    {% endif %}
+    {% include 'cv_ui/common/list_item_as_table_row.html' %}
+
+    {% if forloop.last %}
+    </tbody>
+    </table>
+    {% endif %}
+    {% empty %}
+        <h2>No content</h2>
+    {% endfor %}
+{% endblock content %}

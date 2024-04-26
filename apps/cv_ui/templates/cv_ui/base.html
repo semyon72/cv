@@ -1,0 +1,74 @@
+{% load static %}
+{% load i18n %}
+{% load rest_framework %}
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    {% block head %}
+      {% block meta %}
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      {% endblock %}
+      <title>{% block title %}{% if name %}{{ name }} – {% endif %}Curriculum Vitae Maker{% endblock %}</title>
+      {% block style %}
+      <link rel="stylesheet" type="text/css" href="{% static "cv_ui/css/bootstrap.css" %}"/>
+      {% endblock style %}
+    {% endblock head %}
+  </head>
+
+  {% block body %}
+  <body class="{% block bodyclass %}{% endblock %}">
+
+    <div class="wrapper">
+      {% block navbar %}
+          {%  include 'cv_ui/nav_bar.html' %}
+      {% endblock navbar %}
+
+      <div class="container">
+        {% block breadcrumbs %}
+          <ul class="breadcrumb">
+            {% for breadcrumb_name, breadcrumb_url in breadcrumblist %}
+              {% if forloop.last %}
+                <li class="active"><a href="{{ breadcrumb_url }}">{{ breadcrumb_name }}</a></li>
+              {% else %}
+                <li><a href="{{ breadcrumb_url }}">{{ breadcrumb_name }}</a></li>
+              {% endif %}
+            {% empty %}
+              {% block breadcrumbs_empty %}{% endblock breadcrumbs_empty %}
+            {% endfor %}
+          </ul>
+        {% endblock breadcrumbs %}
+
+        <!-- Content -->
+        <div id="content" role="main" aria-label="{% trans "content" %}">
+            {% block content %}
+            <h4> NO CONTENT </h4>
+            {% endblock content %}
+        </div><!-- /.content -->
+      </div><!-- /.container -->
+    </div><!-- ./wrapper -->
+
+    {% block script %}
+{#      <script>#}
+{#        window.drf = {#}
+{#          csrfHeaderName: "{{ csrf_header_name|default:'X-CSRFToken' }}",#}
+{#          csrfToken: "{% if request %}{{ csrf_token }}{% endif %}"#}
+{#        };#}
+{#      </script>#}
+{#      <script src="{% static "rest_framework/js/jquery-3.5.1.min.js" %}"></script>#}
+{#      <script src="{% static "rest_framework/js/ajax-form.js" %}"></script>#}
+{#      <script src="{% static "rest_framework/js/csrf.js" %}"></script>#}
+      <script src="{% static "cv_ui/js/bootstrap.bundle.js" %}"></script>
+{#      <script src="{% static "rest_framework/js/prettify-min.js" %}"></script>#}
+{#      <script src="{% static "rest_framework/js/default.js" %}"></script>#}
+{#      <script>#}
+{#        $(document).ready(function() {#}
+{#          $('form').ajaxForm();#}
+{#        });#}
+{#      </script>#}
+    {% endblock %}
+
+  </body>
+  {% endblock %}
+</html>

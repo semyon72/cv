@@ -1,0 +1,10 @@
+{% extends 'cv_ui/index.html' %}
+{% load cv_ui_extras %}
+
+{% block content %}
+    <h3>{% block model_header %}model_header IS NOT DEFINED{% endblock model_header %}</h3>
+    <form method="post" action="">
+    {% include 'cv_ui/common/delete_form.html' %}
+    {% block buttons %}IS NOT DEFINED{% endblock buttons %}
+    </form>
+{% endblock content %}

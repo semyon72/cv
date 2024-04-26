@@ -1,0 +1,9 @@
+Django
+djangorestframework
+drf-spectacular
+Pillow
+lxml
+beautifulsoup4
+requests
+reportlab
+Faker

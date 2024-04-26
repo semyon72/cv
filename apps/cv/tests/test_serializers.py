@@ -1422,7 +1422,7 @@ class TestWorkplaceResponsibilitySerializer(CVUserProfileMixin, TestRUBadUserMix
         with self.assertRaises(IntegrityError) as exc:
             obj1 = self.create_object(**self.get_model_kwargs()[1])
         self.assertEqual(
-            'CHECK constraint failed: cv_cvworkplaceresponsibility_begin_end_date_range_intersection',
+            'CHECK constraint failed: workplace_responsibility_date_crossing_constraint',
             str(exc.exception)
         )
 

@@ -1,0 +1,35 @@
+{% extends 'cv_ui/index.html' %}
+
+{% block title %}Education{% endblock title %}
+
+{% block content %}
+    <div class="card">
+    {% if api_response.status_code != 404 %}
+        <div class="card-header">
+            <h5 class="alert alert-danger">Row will be removed permanently.</h5>
+        </div>
+        <div class="card-body">
+            <h5 class="card-header">Do you really want to delete?</h5>
+            <p class="card-text"><span class="text-uppercase fw-semibold me-1">#:</span>{{ data.serializer.instance.pk }}</p>
+            <p class="card-text"><span class="text-uppercase fw-semibold me-1">Begin:</span>{{ data.begin }}</p>
+            <p class="card-text"><span class="text-uppercase fw-semibold me-1">End:</span>{{ data.end }}</p>
+            <p class="card-text"><span class="text-uppercase fw-semibold me-1">Institution:</span>{{ data.institution }}</p>
+            <p class="card-text"><span class="text-uppercase fw-semibold me-1">Speciality:</span>{{ data.speciality }}</p>
+            <p class="card-text"><span class="text-uppercase fw-semibold me-1">Degree:</span>{{ data.degree }}</p>
+            <p class="card-text"><span class="text-uppercase fw-semibold me-1">Complete:</span>{{ data.complete }}</p>
+            <p class="card-text"><span class="text-uppercase fw-semibold me-1">Allow date crossing:</span>{{ data.allow_date_crossing }}</p>
+            <div class="d-flex gap-2 justify-content-end flex-wrap">
+                <a href="{% url 'cv_ui:education-update' pk=data.serializer.instance.pk %}" class="btn btn-warning flex-grow-1 flex-sm-grow-0">Update</a>
+                <a href="{% url 'cv_ui:education-update' pk=data.serializer.instance.pk %}" class="btn btn-danger flex-grow-1 flex-sm-grow-0">Delete</a>
+                <a href="{% url 'cv_ui:education-list' %}" class="btn btn-primary flex-grow-1 flex-sm-grow-0">List</a>
+            </div>
+        </div>
+    {% else %}
+        <div class="card-body">
+            <h5 class="card-header">No content</h5>
+        </div>
+        <a href="{% url 'cv_ui:education-list' %}" class="btn btn-primary">List</a>
+    {% endif %}
+    </div>
+
+{% endblock content %}

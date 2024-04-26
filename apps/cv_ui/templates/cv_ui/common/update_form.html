@@ -1,0 +1,22 @@
+{% load rest_framework %}
+
+{% if data.detail %}
+    {# Not found. #}
+    <div class="alert alert-info" role="alert">{{ data.detail }}</div>
+    {{ buttons.list }}
+{% else %}
+    {# Common flow #}
+    {% csrf_token %}
+    {% for err in data.non_field_errors %}
+        {# non_field_errors are not processing by `render_form` template tag #}
+        <div class="alert alert-danger" role="alert">{{ err }}</div>
+    {% endfor %}
+    {% if data.serializer %}
+        {% render_form data.serializer %}
+    {% endif %}
+    {% for btn_name, btn in buttons.items %}
+        {{ btn }}
+    {% endfor %}
+{% endif %}
+
+

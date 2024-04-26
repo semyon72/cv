@@ -79,10 +79,11 @@ pip install -r /path/to/requirements.txt
     - [Django](https://www.djangoproject.com/)
         - [Pillow](https://pillow.readthedocs.io/en/stable/)
     - [Django REST framework](https://www.django-rest-framework.org/)
+    - [Requests](https://requests.readthedocs.io/en/latest/)
+    - [FPDF2](https://py-pdf.github.io/fpdf2/)
 - Testing (optional)
     - [Beautyfulsoup4](https://www.crummy.com/software/BeautifulSoup/bs4/doc/)
         - [lxml](https://lxml.de/)
-    - [Requests](https://requests.readthedocs.io/en/latest/)
 
 ### Manual installation with the console output (TLDR; [go further](#rights-like-license))
 
@@ -186,6 +187,31 @@ Installing collected packages: urllib3, idna, charset-normalizer, certifi, reque
 Successfully installed certifi-2023.7.22 charset-normalizer-3.2.0 idna-3.4 requests-2.31.0 urllib3-2.0.5
 ```
 
+- [FPDF2](https://py-pdf.github.io/fpdf2/ "FPDF2")
+```
+(.venv) ox23@DESKTOP-Q6MI4SE:~/Python.projects/cv$ pip install fpdf2
+Collecting fpdf2
+  Obtaining dependency information for fpdf2 from https://files.pythonhosted.org/packages/de/b2/9db84d46371207835563f4631fa9b8a79c8ad7f4f59301136057608d3cbe/fpdf2-2.7.6-py2.py3-none-any.whl.metadata
+  Downloading fpdf2-2.7.6-py2.py3-none-any.whl.metadata (51 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 51.7/51.7 kB 1.1 MB/s eta 0:00:00
+Collecting defusedxml (from fpdf2)
+  Using cached defusedxml-0.7.1-py2.py3-none-any.whl (25 kB)
+Requirement already satisfied: Pillow!=9.2.*,>=6.2.2 in ./.venv/lib/python3.9/site-packages (from fpdf2) (10.0.1)
+Collecting fonttools>=4.34.0 (from fpdf2)
+  Obtaining dependency information for fonttools>=4.34.0 from https://files.pythonhosted.org/packages/06/19/05e6d60206300d030948c2e09c28ad7f6e3c6e2299b9a5beb01261b38f0a/fonttools-4.43.1-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata
+  Downloading fonttools-4.43.1-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (152 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 152.4/152.4 kB 2.6 MB/s eta 0:00:00
+Downloading fpdf2-2.7.6-py2.py3-none-any.whl (187 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 187.1/187.1 kB 4.4 MB/s eta 0:00:00
+Downloading fonttools-4.43.1-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (4.5 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.5/4.5 MB 3.5 MB/s eta 0:00:00
+Installing collected packages: fonttools, defusedxml, fpdf2
+Successfully installed defusedxml-0.7.1 fonttools-4.43.1 fpdf2-2.7.6
+
+[notice] A new release of pip is available: 23.2.1 -> 23.3.1
+[notice] To update, run: pip install --upgrade pip
+```
+
 # Rights (like license):
 
 At this time, I have not finally decided whether the project will be free for use or not.
@@ -199,5 +225,5 @@ I will consider this project more successful if, using the code or ideas, you in
 - usage ```./manage.py loaduserdata test_user '!2#4%6&8' my_cv.json``` 
 - database is ready to use and contains test_user/!2#4%6&8 and data from my_cv.json    
 - my_cv.json contains my CV data as an example (instead of documentation)
-- automatically created resources are limited ['email', 'skype', 'git', 'site', 'tel', 'telegram']. You can extend this list by adding the required data directly to the cv_cvresources table  
+- automatically created resources are limited ['email', 'skype', 'git', 'site', 'tel', 'telegram']. You can extend this list by adding the required data directly to the cv_cvresources table
 - this version does not remove redundant data (which is not in my_cv.json) from the database

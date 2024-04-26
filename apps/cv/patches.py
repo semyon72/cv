@@ -9,14 +9,14 @@ import datetime
 import functools
 from typing import Optional, Type
 
-from django.db.backends.base.operations import BaseDatabaseOperations
 from django.db.models import (
     Value, Case, When, F, DateField, Model, Count, Min, Max, Q
 )
 from django.db.models.lookups import IsNull, LessThanOrEqual, Exact
+from django.utils.functional import lazy
+from django.utils.module_loading import import_string
 
 from . import db_patch
-from .sql import range_intersection_sql
 
 
 class SQLitePatchMixin:
@@ -33,85 +33,79 @@ class SQLitePatchMixin:
         raise NotImplementedError
 
     def patch_sqlite(self):
-        self.db_wrapper.connection.create_function(self.name, -1, self._patch_sqlite_func, deterministic=True)
+        self.db_wrapper.connection.create_function(str(self.name), -1, self._patch_sqlite_func, deterministic=True)
 
 
-class CountRangeIntersectionPatch(SQLitePatchMixin, db_patch.BasePatch):
-
-    name = 'range_intersection_for'
-
-    def _patch_sqlite_func(self, pkv, bv, ev, tbname, bfname='begin', efname='end', pkname='id') -> Optional[int]:
-        sql, prms = range_intersection_sql(tbname, bfname, efname, pkname)
-        sql = 'SELECT count(*) FROM (%s)' % sql
-
-        with self.db_wrapper.cursor() as cursor:
-            cursor.execute(sql, prms | {'bv': bv, 'ev': ev, 'pkv': pkv})
-            r = cursor.fetchone()
-
-        return None if r is None else r[0]
+def lazy_func_name(func_class):
+    def func(arg):
+        cls = import_string(f'apps.cv.model_constraint.{arg}')
+        return cls.function
+    return lazy(func, str)(func_class)
 
 
 class EducationDatesCrossingPatch(SQLitePatchMixin, db_patch.BasePatch):
     """
+        # F('pk'), F('profile'), models.F('begin'), models.F('end'), models.F('allow_date_crossing')
+
         CVEducation begin...end range intersection database function for CHECK constraint that limited into user
         Also for this check, the pk-value is mandatory due to UPDATE we will need to exclude itself row from checking
     """
+    name = lazy_func_name('EducationDatesCrossingFunc')
 
-    name = 'edu_dates_crossing'
-
-    def _get_model(self) -> Type[Model]:
-        from .models import CVEducation
+    @functools.cached_property
+    def model(self) -> Type[Model]:
+        from apps.cv.models import CVEducation
         return CVEducation
 
-    def _patch_sqlite_func(self, pkv, pv, bv, ev) -> Optional[int]:
-        """
-            pkv, pv, bv, ev - values of `pk`, `profile_id`, `begin` and `end` fields
-            Stored func declaration
-        """
-        model = self._get_model()
-        opts = model._meta
-        ops: BaseDatabaseOperations = self.db_wrapper.ops
+    def _patch_sqlite_func(self, *args) -> bool:
+        # try:
+        #     pk_val, profile_val, begin_val, end_val, allow_date_crossing = args
+        # except ValueError as exc:
+        #     raise ValueError(f'{exc} in {self.__class__.__name__}')
+        pk, profile, begin, end, allow_date_crossing = args
 
-        tbset = f'''(SELECT * FROM {ops.quote_name(opts.db_table)} WHERE {ops.quote_name(opts.get_field('profile').column)}=:pv)'''
+        if begin is None or (end is not None and begin > end):
+            # raise AssertionError('`begin` can\'t be Null or greater than `end`')
+            # As a final consequence, this case is equal to the crossing of dates
+            return True
 
-        sql, prms = range_intersection_sql(
-            tbset,
-            ops.quote_name(opts.get_field('begin').column),
-            ops.quote_name(opts.get_field('end').column),
-            ops.quote_name(opts.pk.column),
-            tbname_alias=ops.quote_name('edu')
+        if allow_date_crossing:
+            return True
+
+        exp = Q(Q(end__isnull=True) | Q(end__gte=Value(begin))) & Q(IsNull(Value(end), True) | Q(begin__lte=Value(end)))
+
+        qs = self.model.objects.filter(
+            exp,
+            ~Q(pk=pk),
+            profile=profile
         )
-        sql = 'SELECT count(*) FROM (%s)' % sql
+        res = qs[:1]
 
-        with self.db_wrapper.cursor() as cursor:
-            cursor.execute(sql, prms | {'pkv': pkv, 'pv': pv, 'bv': bv, 'ev': ev})
-            r = cursor.fetchone()
-
-        return None if r is None else r[0]
+        return True if len(res) == 0 else False
 
 
 class WorkplaceDatesCrossingPatch(EducationDatesCrossingPatch):
     """
-        CVWorkplace begin...end range intersection database function for CHECK constraint that limited into user
-        Also for this check, the pk-value is mandatory due to UPDATE we will need to exclude itself row from checking
+        See EducationDatesCrossingPatch
     """
 
-    name = 'wp_dates_crossing'
+    name = lazy_func_name('WorkplaceDatesCrossingFunc')
 
-    def _get_model(self) -> Type[Model]:
+    @functools.cached_property
+    def model(self) -> Type[Model]:
         from .models import CVWorkplace
         return CVWorkplace
 
 
 class ProjectDatesCrossingPatch(EducationDatesCrossingPatch):
     """
-        CVProject begin...end range intersection database function for CHECK constraint that limited into user
-        Also for this check, the pk-value is mandatory due to UPDATE we will need to exclude itself row from checking
+        See EducationDatesCrossingPatch
     """
 
-    name = 'proj_dates_crossing'
+    name = lazy_func_name('ProjectDatesCrossingFunc')
 
-    def _get_model(self) -> Type[Model]:
+    @functools.cached_property
+    def model(self) -> Type[Model]:
         from .models import CVProject
         return CVProject
 
@@ -123,10 +117,10 @@ class WorkplaceRespDatesCrossingPatch(SQLitePatchMixin, db_patch.BasePatch):
         we will need to exclude itself row from checking
     """
 
-    name = 'wpresp_dates_crossing'
+    name = lazy_func_name('WorkplaceResponsibilityDatesCrossingFunc')
 
     @functools.cached_property
-    def patch_func_model(self):
+    def model(self):
         from .models import CVWorkplaceResponsibility
         return CVWorkplaceResponsibility
 
@@ -151,7 +145,7 @@ class WorkplaceRespDatesCrossingPatch(SQLitePatchMixin, db_patch.BasePatch):
             default=None
         )
 
-        res: dict = self.patch_func_model.objects.filter(~Q(pk=wpr_id), workplace=wp_id).aggregate(
+        res: dict = self.model.objects.filter(~Q(pk=wpr_id), workplace=wp_id).aggregate(
             cnt=Count('*'),
             begin=Min('begin'),
             end=max_case,
@@ -159,11 +153,11 @@ class WorkplaceRespDatesCrossingPatch(SQLitePatchMixin, db_patch.BasePatch):
 
         # no matching rows found -> no intersection
         if res['cnt'] == 0:
-            return False
+            return True
 
         dbv = None if bv is None else datetime.date.fromisoformat(bv)
         dev = None if ev is None else datetime.date.fromisoformat(ev)
-        return (res['end'] is None or dbv <= res['end']) and (dev is None or dev >= res['begin'])
+        return not ((res['end'] is None or dbv <= res['end']) and (dev is None or dev >= res['begin']))
 
 
 class WorkplaceRespDatesInWorkplacePatch(SQLitePatchMixin, db_patch.BasePatch):
@@ -520,7 +514,6 @@ class TechnologyUniqueTogetherWithProfilePatch(SQLitePatchMixin, db_patch.BasePa
 class CVPatcher(db_patch.Patcher):
 
     patches = [
-        CountRangeIntersectionPatch,
         EducationDatesCrossingPatch,
         WorkplaceDatesCrossingPatch,
         ProjectDatesCrossingPatch,

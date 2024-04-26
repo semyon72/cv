@@ -1047,7 +1047,7 @@ class TestEducation(TestCase):
         obj = self.create_object()
         response = self.client.get(reverse(self.get_view_name(), [obj.pk]))
 
-        self.assertEqual(status.HTTP_403_FORBIDDEN, response.status_code)
+        self.assertEqual(status.HTTP_404_NOT_FOUND, response.status_code)
 
     def test_list(self, auth_profile: models.CVUserProfile = None):
         if auth_profile is None:
@@ -1059,7 +1059,8 @@ class TestEducation(TestCase):
         response = self.client.get(reverse(self.get_view_name()))
 
         if auth_profile != self.profile:
-            self.assertEqual(status.HTTP_403_FORBIDDEN, response.status_code)
+            self.assertEqual(status.HTTP_200_OK, response.status_code)
+            self.assertEqual([], response.data)
         else:
             self.assertEqual(status.HTTP_200_OK, response.status_code)
             self.assertListEqual(response.data.serializer.to_representation([obj, obj1]), response.data)
@@ -1115,7 +1116,7 @@ class TestEducation(TestCase):
         obj = self.create_object()
         data = self.model_kwargs_to_data(model_to_dict(obj) | self.get_update_model_kwargs())
         response = self.client.put(reverse(self.get_view_name(), kwargs={'pk': obj.pk}), data=data)
-        self.assertEqual(status.HTTP_403_FORBIDDEN, response.status_code)
+        self.assertEqual(status.HTTP_404_NOT_FOUND, response.status_code)
 
     def test_delete(self):
         obj = self.create_object()
@@ -1130,7 +1131,7 @@ class TestEducation(TestCase):
         obj = self.create_object()
         self.client.force_authenticate(user=self.profiles[1].user, token=None)
         response = self.client.delete(reverse(self.get_view_name(), kwargs={'pk': obj.pk}))
-        self.assertEqual(status.HTTP_403_FORBIDDEN, response.status_code)
+        self.assertEqual(status.HTTP_404_NOT_FOUND, response.status_code)
         obj.refresh_from_db()
 
 

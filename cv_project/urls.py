@@ -23,5 +23,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path("accounts/", include("django.contrib.auth.urls")),
     path('cv/api/', include('apps.cv.urls')),
+    path('cv/api/auth/', include('rest_framework.urls')),
+    path('', include('apps.cv_ui.urls')),
     * static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT),
 ]

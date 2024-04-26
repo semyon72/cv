@@ -4,7 +4,7 @@
 # File: model_constraint.py
 # Contact: Semyon Mamonov <semyon.mamonov@gmail.com>
 # Created by ox23 at 2023-05-19 (y-m-d) 12:52 PM
-
+import functools
 from typing import Union, Type
 
 from django.db import models
@@ -18,7 +18,6 @@ from django.db.models.lookups import Range, IsNull, Exact, GreaterThanOrEqual
 from django.db.models.query_utils import DeferredAttribute
 
 from apps.cv.db_functions import (
-    RangeIntersectionFor, EducationDatesCrossing, WorkplaceDatesCrossing, ProjectDatesCrossing,
     WorkplaceRespDatesInWorkplace, ProjectTechnologyDurationInProject, WorkplaceProjectSameUser,
     WorkplaceProjectProjectDatesInWorkplace, WorkplaceDatesGTEProject, ProjectDatesLTEWorkplace,
     WorkplaceDatesGTEWorkplaceResp, ProjectDatesGTEProjectTechnology, WorkplaceRespDatesCrossing,
@@ -60,79 +59,7 @@ def length_range_constraint(field: Union[Field, DeferredAttribute]) -> BaseConst
         )
 
 
-def _date_begin_end_settings_pre_check(begin: Field, end: Field):
-    if not isinstance(begin, models.DateField) or not isinstance(end, models.DateField):
-        raise ValueError('`begin` and `end` must be instance of %s' % models.DateField.__name__)
-
-    if begin.null and end.null:
-        return False
-
-    if begin.null:
-        raise ValueError('`begin` should not be nullable')
-
-    return True
-
-
-def date_end_gte_begin_or_null_constraint(begin: Field, end: Field) -> BaseConstraint:
-    if _date_begin_end_settings_pre_check(begin, end):
-        return CheckConstraint(
-            check=Q(
-                IsNull(F(begin.attname), False),
-                IsNull(F(end.attname), True) | GreaterThanOrEqual(F(end.attname), F(begin.attname))
-            ),
-            name=create_constraint_name(begin, 'end_gte_begin_or_null')
-        )
-
-
-def range_intersection_constraint(begin: Field, end: Field) -> BaseConstraint:
-    if _date_begin_end_settings_pre_check(begin, end):
-        opts = begin.model._meta
-        return CheckConstraint(
-            check=Exact(
-                RangeIntersectionFor(
-                    F(opts.pk.attname), F(begin.attname), F(end.attname),
-                    Value(opts.db_table), Value(begin.column), Value(end.column), Value(opts.pk.column),
-                    output_field=IntegerField()
-                ),
-                Value(0),
-            ),
-            name=create_constraint_name(begin, 'end_date_range_intersection')
-        )
-
-
 # Specialized constraints - for certain tables using the stored functions
-
-def _dates_crossing_for_user_constraint(begin: Field, end: Field, *, db_func: Type, cname_sufix: str = 'end_dates_intersect') -> BaseConstraint:
-    """
-        These constraints are limited into `profile`.
-        Other logic is equal to range_intersection_constraint
-    """
-    if _date_begin_end_settings_pre_check(begin, end):
-        opts = begin.model._meta
-        return CheckConstraint(
-            check=Exact(
-                db_func(
-                    F(opts.pk.attname), F(opts.get_field('profile').attname), F(begin.attname), F(end.attname),
-                    output_field=IntegerField()
-                ),
-                Value(0),
-            ),
-            name=create_constraint_name(begin, cname_sufix)
-        )
-
-
-def education_dates_crossing_constraint(begin: Field, end: Field) -> BaseConstraint:
-    return _dates_crossing_for_user_constraint(begin, end, db_func=EducationDatesCrossing)
-
-
-def workplace_dates_crossing_constraint(begin: Field, end: Field) -> BaseConstraint:
-    return _dates_crossing_for_user_constraint(begin, end, db_func=WorkplaceDatesCrossing)
-
-
-def project_dates_crossing_constraint(begin: Field, end: Field) -> BaseConstraint:
-    return _dates_crossing_for_user_constraint(begin, end, db_func=ProjectDatesCrossing)
-
-
 def workplace_responsibility_dates_in_workplace_constraint(workplace: Field, begin: Field, end: Field) -> BaseConstraint:
     if workplace.model.__name__ != 'CVWorkplaceResponsibility':
         raise ValueError('`workplace` field must be field of CVWorkplaceResponsibility model')
@@ -298,3 +225,85 @@ def add_constraints(**field_names):
         return cls
 
     return wrapper
+
+
+class BaseExpressedConstraint(CheckConstraint):
+
+    default_name: str = None
+    default_check: models.Expression = None
+
+    def __init__(self, *, check=None, name=None, violation_error_message=None):
+        if name is None:
+            name = self.get_default_name()
+
+        if check is None:
+            check = self.default_check
+
+        super().__init__(check=check, name=name, violation_error_message=violation_error_message)
+
+    def get_default_name(self):
+        return self.default_name or ''.join(functools.reduce(
+            lambda chrs, chr1: chrs+['_', chr1.lower()] if chr1.isupper() else chrs+[chr1.lower()],
+            type(self).__name__,
+            []
+        )).lstrip('_')
+
+    def set_name_prefix(self, value) -> CheckConstraint:
+        self.name = f'{value}_{self.name}'
+        return self
+
+
+class DateBeginIsNotNullAndEndIsGreaterOrEqualConstraint(BaseExpressedConstraint):
+    default_check = Q(IsNull(F('begin'), False), IsNull(F('end'), True) | GreaterThanOrEqual(F('end'), F('begin')))
+
+    def __init__(self, *, check=None, name=None, violation_error_message=None):
+        super().__init__(check=check, name=name, violation_error_message=violation_error_message)
+
+
+class DatesCrossingFunc(models.Func):
+    expressions = [F('pk'), F('profile'), models.F('begin'), models.F('end'), models.F('allow_date_crossing')]
+
+    def __init__(self, *expressions, output_field=None, **extra):
+
+        if not expressions:
+            expressions = self.expressions
+            output_field = models.BooleanField()
+
+        if self.function is None:
+            self.function = type(self).__name__
+
+        self.arity = len(expressions)
+        super().__init__(*expressions, output_field=output_field, **extra)
+
+
+class EducationDatesCrossingFunc(DatesCrossingFunc):
+    function = __qualname__  # 'EducationDatesCrossingFunc'
+
+
+class EducationDateCrossingConstraint(BaseExpressedConstraint):
+    default_check = EducationDatesCrossingFunc()
+
+
+class ProjectDatesCrossingFunc(DatesCrossingFunc):
+    function = __qualname__  # 'ProjectDatesCrossingFunc'
+
+
+class ProjectDateCrossingConstraint(EducationDateCrossingConstraint):
+    default_check = ProjectDatesCrossingFunc()
+
+
+class WorkplaceDatesCrossingFunc(DatesCrossingFunc):
+    function = __qualname__
+
+
+class WorkplaceDateCrossingConstraint(EducationDateCrossingConstraint):
+    default_check = WorkplaceDatesCrossingFunc()
+
+
+class WorkplaceResponsibilityDatesCrossingFunc(DatesCrossingFunc):
+    function = __qualname__
+    expressions = [F('pk'), F('workplace'), models.F('begin'), models.F('end')]
+
+
+class WorkplaceResponsibilityDateCrossingConstraint(EducationDateCrossingConstraint):
+    default_check = WorkplaceResponsibilityDatesCrossingFunc()

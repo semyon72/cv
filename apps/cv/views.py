@@ -1,16 +1,22 @@
-from typing import Optional
+from typing import Optional, Iterable
 
 from django.contrib.auth.models import User
-from django.db.models import Model, QuerySet, Q
+from django.db.models import Model, QuerySet, Q, F
 from django.http import Http404
 from django.shortcuts import render
 
 # Create your views here.
+from django.urls import get_resolver, get_ns_resolver
+from drf_spectacular.plumbing import get_doc
 
 from rest_framework import generics, mixins, parsers
+from rest_framework.decorators import api_view
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.filters import BaseFilterBackend
 from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import (IsAuthenticated, BasePermission, SAFE_METHODS, IsAdminUser, )
+from rest_framework.response import Response
+from rest_framework.reverse import reverse
 
 from . import serializers, models
 
@@ -32,6 +38,7 @@ from . import serializers, models
 # class WorkplaceProject <- class Workplace:
 # class Workplace <- class WorkplaceResponsibilitySerializer -> class Project:
 from .models import CVUserProfile
+from . import schemas
 
 
 class IsReadOnlyOrAdmin(BasePermission):
@@ -212,6 +219,21 @@ class TechnologiesRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
     get_queryset = TechnologiesListCreate.get_queryset
 
 
+class MyselfFilter(BaseFilterBackend):
+
+    def filter_queryset(self, request, queryset: QuerySet, view):
+        profile = get_current_profile(request)
+        if issubclass(type(view), WorkplaceProject):
+            rqs = queryset.filter(workplace__profile=profile, project__profile=F('workplace__profile'))
+        elif issubclass(type(view), WorkplaceResponsibility):
+            rqs = queryset.filter(workplace__profile=profile)
+        elif issubclass(type(view), ProjectTechnology):
+            rqs = queryset.filter(project__profile=profile)
+        else:
+            rqs = queryset.filter(profile=profile)
+        return rqs
+
+
 class CVBaseAPIView(mixins.ListModelMixin, mixins.CreateModelMixin, mixins.RetrieveModelMixin,
                     mixins.UpdateModelMixin, mixins.DestroyModelMixin, generics.GenericAPIView):
     """
@@ -233,14 +255,20 @@ class CVBaseAPIView(mixins.ListModelMixin, mixins.CreateModelMixin, mixins.Retri
             model: Model = self.serializer_class.Meta.model
             self.queryset = model.objects.all()
 
-    def initial(self, request, *args, **kwargs):
-        super().initial(request, *args, **kwargs)
-        # converting pk value into int
-        lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
-        pk = self.kwargs.pop(lookup_url_kwarg, None)
+    def _get_lookup_field_name(self) -> str:
+        return self.lookup_url_kwarg or self.lookup_field
+
+    def _prepare_lookup_field(self) -> Optional[int]:
+        # It converts `pk` value into int
+        lookup_url_kwarg = self._get_lookup_field_name()
+        pk = self.kwargs.get(lookup_url_kwarg, None)
         if pk is not None:
             self.kwargs[lookup_url_kwarg] = int(pk)
+        return pk
 
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
+        self._prepare_lookup_field()
         self._initialize_queryset()
 
     def get(self, request, *args, **kwargs):
@@ -250,7 +278,7 @@ class CVBaseAPIView(mixins.ListModelMixin, mixins.CreateModelMixin, mixins.Retri
             re_path('^education/(?:(?P<pk>[0-9]+)/)?$', Education.as_view(), name='education')
             where `pk` is optional part
         """
-        lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
+        lookup_url_kwarg = self._get_lookup_field_name()
         # We did some preparation in .initial
         if lookup_url_kwarg in self.kwargs:
             return self.retrieve(request, *args, **kwargs)
@@ -269,7 +297,25 @@ class CVBaseAPIView(mixins.ListModelMixin, mixins.CreateModelMixin, mixins.Retri
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
 
+    def options(self, request, *args, **kwargs):
+        # Issue - Inside super will be checking (testing) the PUT and POST actions,
+        # literally in SimpleMetadata.determine_actions(...)
+        # but for PUT case it checks self.lookup_field by self.get_object()
+        #
+        # Cases to resolve:
+        # 1. temporary remove the 'PUT' from self.http_method_names
+        # 2. temporary add a stub for `get_object` method which will just return None
+        lookup_url_kwarg = self._get_lookup_field_name()
+        try:
+            if lookup_url_kwarg not in self.kwargs:
+                self.__dict__['get_object'] = lambda: None
 
+            return super().options(request, *args, **kwargs)
+        finally:
+            self.__dict__.pop('get_object', None)
+
+
+@schemas.profile_schema
 class Profile(CVBaseAPIView):
     serializer_class = serializers.ProfileSerializer
     queryset = serializer_class.Meta.model.objects.select_related('user')
@@ -295,47 +341,105 @@ class Profile(CVBaseAPIView):
         raise PermissionDenied('Profile delete is forbidden, use the PUT action to modify it')
 
 
+@schemas.education_schema
 class Education(CVBaseAPIView):
     permission_classes = [IsAuthenticatedAndMyself]
     serializer_class = serializers.EducationSerializer
+    filter_backends = [MyselfFilter]
 
 
+@schemas.hobby_schema
 class Hobby(CVBaseAPIView):
     permission_classes = [IsAuthenticatedAndMyself]
     serializer_class = serializers.HobbySerializer
+    filter_backends = [MyselfFilter]
 
 
+@schemas.language_schema
 class Language(CVBaseAPIView):
     permission_classes = [IsAuthenticatedAndMyself]
     serializer_class = serializers.LanguageSerializer
+    filter_backends = [MyselfFilter]
 
 
+@schemas.project_schema
 class Project(CVBaseAPIView):
     permission_classes = [IsAuthenticatedAndMyself]
     serializer_class = serializers.ProjectSerializer
+    filter_backends = [MyselfFilter]
 
 
+@schemas.workplace_schema
 class Workplace(CVBaseAPIView):
     permission_classes = [IsAuthenticatedAndMyself]
     serializer_class = serializers.WorkplaceSerializer
+    filter_backends = [MyselfFilter]
 
 
+@schemas.userresource_schema
 class UserResource(CVBaseAPIView):
     permission_classes = [IsAuthenticatedAndMyself]
     serializer_class = serializers.UserResourceSerializer
+    filter_backends = [MyselfFilter]
 
 
+@schemas.projecttechnology_schema
 class ProjectTechnology(CVBaseAPIView):
     permission_classes = [IsAuthenticatedAndMyself]
     serializer_class = serializers.ProjectTechnologySerializer
+    filter_backends = [MyselfFilter]
 
 
+@schemas.workplaceresponsibility_schema
 class WorkplaceResponsibility(CVBaseAPIView):
     permission_classes = [IsAuthenticatedAndMyself]
     serializer_class = serializers.WorkplaceResponsibilitySerializer
+    filter_backends = [MyselfFilter]
 
 
+@schemas.workplaceproject_schema
 class WorkplaceProject(CVBaseAPIView):
     permission_classes = [IsAuthenticatedAndMyself]
     serializer_class = serializers.WorkplaceProjectSerializer
+    filter_backends = [MyselfFilter]
+
+
+@api_view(['GET'])
+def api_root_view(request, app_names: Iterable, sort: bool = True):
+    resolver = get_resolver()
+    res = {}
+
+    for app_name in app_names:
+        # A bit simplified logic has gotten from `django.urls.base.reverse` to get URLResolver for 'cv' app_name
+        app_nss = resolver.app_dict.get(app_name, [])
+        assert app_nss, f'app_name {app_name} does not configured properly'
+
+        # take default app_instance info
+        ns_pattern_str, ns_resolver = resolver.namespace_dict[app_nss[0]]
+
+        # Very simplified logic, for now
+        # In particular, We assume that app_name only has patterns, not url_resolver-s
+        for pattern in ns_resolver.url_patterns:
+            possibility, pattern_info, defaults, converters = ns_resolver.reverse_dict.getlist(pattern.callback)[0]
+            result, params = possibility[0]
+            if params:
+                continue
+
+            abs_url = request.build_absolute_uri(f'/{ns_pattern_str}')+str(result)
+            view_class = getattr(pattern.callback, 'cls', getattr(pattern.callback, 'view_class'))
+            view = view_class(**getattr(pattern.callback, 'initkwargs', getattr(pattern.callback, 'view_initkwargs', {})))
+            view.setup(request)
+            if hasattr(view, 'schema'):
+                schema = view.schema
+                schema.method = 'get'
+                descr = schema.get_description()
+            else:
+                # For non API endpoints (like - login, logout)
+                view_doc = get_doc(view.__class__)
+                action_doc = get_doc(view.get)
+                descr = action_doc or view_doc
+
+            res[abs_url] = descr
+
+    return Response({itm[0]: itm[1] for itm in sorted(res.items(), key=lambda v: v[0])} if sort else res)
 
